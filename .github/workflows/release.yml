@@ -27,7 +27,7 @@ jobs:
           components: clippy
 
       - name: Install cargo-chef
-        uses: taiki-e/install-action@v2
+        uses: taiki-e/install-action@v2.85.3
         with:
           tool: cargo-chef
 
@@ -76,7 +76,7 @@ jobs:
             target: x86_64-pc-windows-msvc
 
       - name: Install cargo-chef and cargo-wix
-        uses: taiki-e/install-action@v2
+        uses: taiki-e/install-action@v2.85.3
         with:
           tool: cargo-chef,cargo-wix
 
@@ -206,7 +206,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Install cargo-chef and cargo-deb
-        uses: taiki-e/install-action@v2
+        uses: taiki-e/install-action@v2.85.3
         with:
           tool: cargo-chef,cargo-deb
 
