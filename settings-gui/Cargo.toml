@@ -15,15 +15,15 @@ name = "settings-gui"
 path = "src/main.rs"
 
 [dependencies]
-anyhow = "1.0"
-dirs = "6.0"
-open = "5.3.3"
-reqwest = { version = "0.13", features = ["json"] }
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-slint = { version = "1.17", default-features = false, features = ["std", "backend-winit", "renderer-femtovg", "compat-1-2"] }
-tokio = { version = "1.48", features = ["rt-multi-thread", "time"] }
-async-trait = "0.1"
+anyhow = "1.0.104"
+dirs = "6.0.0"
+open = "5.4.1"
+reqwest = { version = "0.13.4", features = ["json"] }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.151"
+slint = { version = "1.17.1", default-features = false, features = ["std", "backend-winit", "renderer-femtovg", "compat-1-2"] }
+tokio = { version = "1.53.1", features = ["rt-multi-thread", "time"] }
+async-trait = "0.1.92"
 
 [build-dependencies]
-slint-build = "1.17"
+slint-build = "1.17.1"

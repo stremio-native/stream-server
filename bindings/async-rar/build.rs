@@ -10,6 +10,9 @@
 use std::env;
 use std::path::PathBuf;
 
+mod build_support;
+use build_support::should_compile_unrar_cpp;
+
 fn find_llvm_path() -> Option<PathBuf> {
     if env::var("LIBCLANG_PATH").is_ok() {
         return None;
@@ -197,61 +200,7 @@ fn main() {
         .filter_map(Result::ok)
         .filter(|p| {
             let name = p.file_name().unwrap().to_str().unwrap();
-
-            // Common exclusions
-            if matches!(
-                name,
-                // GUI/Console related - not needed for library
-                "arccmt.cpp" |
-                "consio.cpp" |
-                "uiconsole.cpp" |
-                "rar.cpp" |
-                // Files that are #included by other .cpp files
-                "blake2s_sse.cpp" |     // included by blake2s.cpp
-                "blake2sp.cpp" |        // included by blake2s.cpp
-                "unpack15.cpp" |        // included by unpack.cpp
-                "unpack20.cpp" |        // included by unpack.cpp
-                "unpack30.cpp" |        // included by unpack.cpp
-                "unpack50.cpp" |        // included by unpack.cpp
-                "unpack50mt.cpp" |      // included by unpack.cpp
-                "unpack50frag.cpp" |    // included by unpack.cpp
-                "unpackinline.cpp" |    // included by unpack.cpp
-                "coder.cpp" |           // included by unpack.cpp
-                "model.cpp" |           // included by unpack.cpp
-                "suballoc.cpp" |        // included by unpack.cpp
-                "uicommon.cpp" |        // included by ui.cpp/uisilent.cpp
-                "uisilent.cpp" |        // included by other ui
-                // Dependencies of crypt.cpp/recvol.cpp
-                "crypt1.cpp" |          // included by crypt.cpp
-                "crypt2.cpp" |          // included by crypt.cpp
-                "crypt3.cpp" |          // included by crypt.cpp
-                "crypt5.cpp" |          // included by crypt.cpp
-                "recvol3.cpp" |         // included by recvol.cpp
-                "recvol5.cpp" |         // included by recvol.cpp
-                "rs16.cpp" |            // included by recvol5.cpp
-                "win32acl.cpp" |        // Windows-specific, included conditionally
-                "win32stm.cpp" |        // Windows-specific, included conditionally
-                "win32lnk.cpp" // Windows-specific, included conditionally
-            ) {
-                return false;
-            }
-
-            // Platform-specific exclusions
-            if is_windows && matches!(name, "ulinks.cpp" | "uowners.cpp") {
-                return false;
-            }
-
-            // Unix: exclude threading files (CRITSECT_HANDLE not defined without RAR_SMP)
-            if !is_windows
-                && matches!(
-                    name,
-                    "threadmisc.cpp" | "threadpool.cpp" | "motw.cpp" | "isnt.cpp"
-                )
-            {
-                return false;
-            }
-
-            true
+            should_compile_unrar_cpp(name, is_windows)
         })
         .collect();
 

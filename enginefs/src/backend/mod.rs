@@ -36,7 +36,17 @@ pub trait TorrentBackend: Send + Sync {
     async fn remove_torrent(&self, info_hash: &str) -> Result<()>;
     async fn list_torrents(&self) -> Vec<String>;
     async fn memory_diagnostics(&self) -> BackendMemoryDiagnostics;
+    async fn update_session_settings(
+        &self,
+        _profile: &TorrentSpeedProfile,
+        _privacy: &TorrentPrivacyConfig,
+    ) {
+    }
     fn set_seeding_enabled(&self, _enabled: bool) {}
+    async fn focus_torrent(&self, _target_info_hash: &str) {}
+    async fn resume_all_torrents(&self) {}
+    async fn pause_all_torrents(&self) {}
+    async fn set_streaming_mode(&self, _enabled: bool) {}
 }
 
 #[async_trait::async_trait]

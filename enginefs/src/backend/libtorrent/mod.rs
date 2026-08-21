@@ -805,7 +805,31 @@ impl TorrentBackend for LibtorrentBackend {
         }
     }
 
+    async fn update_session_settings(
+        &self,
+        profile: &crate::backend::TorrentSpeedProfile,
+        privacy: &crate::backend::TorrentPrivacyConfig,
+    ) {
+        LibtorrentBackend::update_session_settings(self, profile, privacy).await;
+    }
+
     fn set_seeding_enabled(&self, enabled: bool) {
         self.playback.set_seeding_enabled(enabled);
+    }
+
+    async fn focus_torrent(&self, target_info_hash: &str) {
+        LibtorrentBackend::focus_torrent(self, target_info_hash).await;
+    }
+
+    async fn resume_all_torrents(&self) {
+        LibtorrentBackend::resume_all_torrents(self).await;
+    }
+
+    async fn pause_all_torrents(&self) {
+        LibtorrentBackend::pause_all_torrents(self).await;
+    }
+
+    async fn set_streaming_mode(&self, enabled: bool) {
+        LibtorrentBackend::set_streaming_mode(self, enabled).await;
     }
 }

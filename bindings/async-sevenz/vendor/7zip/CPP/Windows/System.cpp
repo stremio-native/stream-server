@@ -5,8 +5,9 @@
 #ifndef _WIN32
 #include <unistd.h>
 #include <limits.h>
-#if defined(__APPLE__) || defined(__DragonFly__) || \
-    defined(BSD) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
+#if defined(__APPLE__) || defined(__DragonFly__) \
+    || defined(BSD) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) \
+    || defined(__QNXNTO__)
 #include <sys/sysctl.h>
 #else
 #include <sys/sysinfo.h>
@@ -299,8 +300,9 @@ bool GetRamSize(size_t &size)
   size = (size_t)sizeof(size_t) << 29;
   size64 = size;
 
-#if defined(__APPLE__) || defined(__DragonFly__) || \
-    defined(BSD) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
+#if defined(__APPLE__) || defined(__DragonFly__) \
+    || defined(BSD) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) \
+    || defined(__QNXNTO__)
 
     uint64_t val = 0;
     int mib[2];
@@ -411,7 +413,7 @@ unsigned Get_File_OPEN_MAX_Reduced_for_3_tasks()
   else
     numFiles_OPEN_MAX = 1;
   numFiles_OPEN_MAX /= 3; // we suppose that we have up to 3 tasks in total for multiple file processing
-  numFiles_OPEN_MAX = MyMax(numFiles_OPEN_MAX, (unsigned long)3);
+  numFiles_OPEN_MAX = MyMax(numFiles_OPEN_MAX, (unsigned long)1);
   unsigned n = (unsigned)(int)-1;
   if (n > numFiles_OPEN_MAX)
     n = (unsigned)numFiles_OPEN_MAX;

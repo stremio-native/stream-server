@@ -91,6 +91,7 @@ pub struct BackendEngineFS<B: TorrentBackend> {
     active_multifile_files: Arc<RwLock<HashMap<String, MultiFileActiveSelection>>>,
     priority_generation: Arc<AtomicU64>,
     /// Optional disk cache for persisting completed files
+    #[cfg_attr(not(feature = "libtorrent"), allow(dead_code))]
     disk_cache: Option<Arc<disk_cache::DiskCacheManager>>,
     /// When false, torrents are paused once their download completes.
     seeding_enabled: Arc<AtomicBool>,
@@ -1408,82 +1409,6 @@ impl<B: TorrentBackend + 'static> BackendEngineFS<B> {
         }))
     }
 
-    /// Get a reference to the backend for direct access
-    pub fn get_backend(&self) -> &Arc<B> {
-        &self.backend
-    }
-}
-
-#[cfg(all(feature = "librqbit", not(feature = "libtorrent")))]
-impl BackendEngineFS<LibrqbitBackend> {
-    pub async fn new(
-        root_dir: std::path::PathBuf,
-        _cache_config: EngineCacheConfig,
-    ) -> Result<Self> {
-        let download_dir = root_dir.join("rqbit-downloads");
-        let (backend, restored) = LibrqbitBackend::new(download_dir.clone()).await?;
-        Ok(Self::new_with_backend(
-            backend,
-            restored,
-            root_dir.join("cache"),
-            download_dir,
-        ))
-    }
-}
-
-#[cfg(feature = "libtorrent")]
-impl BackendEngineFS<LibtorrentBackend> {
-    pub async fn new(
-        root_dir: std::path::PathBuf,
-        config: crate::backend::BackendConfig,
-    ) -> Result<Self> {
-        Self::new_with_storage(root_dir, config, None).await
-    }
-
-    pub async fn new_with_storage(
-        root_dir: std::path::PathBuf,
-        config: crate::backend::BackendConfig,
-        tracker_storage: Option<Arc<dyn crate::trackers::TrackerStorage>>,
-    ) -> Result<Self> {
-        let download_dir = root_dir.join("libtorrent-downloads");
-        let cache_size = config.cache.size;
-        let backend = LibtorrentBackend::new(download_dir.clone(), config)?;
-
-        let mut efs = Self::new_with_backend_and_storage(
-            backend,
-            HashMap::new(),
-            download_dir.clone(),
-            download_dir,
-            tracker_storage,
-        );
-
-        // Set up disk cache for conditional file persistence
-        let disk_cache_dir = root_dir.join("disk-cache");
-        efs.disk_cache = Some(Arc::new(disk_cache::DiskCacheManager::new(
-            disk_cache_dir,
-            cache_size,
-        )));
-
-        Ok(efs)
-    }
-
-    pub async fn new_disk_backed(
-        root_dir: std::path::PathBuf,
-        config: crate::backend::BackendConfig,
-        tracker_storage: Option<Arc<dyn crate::trackers::TrackerStorage>>,
-    ) -> Result<Self> {
-        let download_dir = root_dir.join("torrent-cache");
-        let backend = LibtorrentBackend::new_disk_backed(download_dir.clone(), config)?;
-
-        Ok(Self::new_with_backend_and_storage(
-            backend,
-            HashMap::new(),
-            download_dir.clone(),
-            download_dir,
-            tracker_storage,
-        ))
-    }
-
     /// Update session settings dynamically (called when user changes torrent profile)
     pub async fn update_speed_profile(&self, profile: &crate::backend::TorrentSpeedProfile) {
         self.backend
@@ -1573,6 +1498,115 @@ impl BackendEngineFS<LibtorrentBackend> {
     pub async fn set_streaming_mode(&self, enabled: bool) {
         self.backend.set_streaming_mode(enabled).await;
     }
+
+    /// Get a reference to the backend for direct access
+    pub fn get_backend(&self) -> &Arc<B> {
+        &self.backend
+    }
+}
+
+#[cfg(all(feature = "librqbit", not(feature = "libtorrent")))]
+impl BackendEngineFS<LibrqbitBackend> {
+    fn new_from_librqbit_parts(
+        root_dir: std::path::PathBuf,
+        download_dir: std::path::PathBuf,
+        backend: LibrqbitBackend,
+        restored: HashMap<String, crate::backend::librqbit::LibrqbitHandle>,
+        tracker_storage: Option<Arc<dyn crate::trackers::TrackerStorage>>,
+    ) -> Self {
+        Self::new_with_backend_and_storage(
+            backend,
+            restored,
+            root_dir.join("cache"),
+            download_dir,
+            tracker_storage,
+        )
+    }
+
+    pub async fn new(
+        root_dir: std::path::PathBuf,
+        config: crate::backend::BackendConfig,
+    ) -> Result<Self> {
+        Self::new_with_storage(root_dir, config, None).await
+    }
+
+    pub async fn new_with_storage(
+        root_dir: std::path::PathBuf,
+        _config: crate::backend::BackendConfig,
+        tracker_storage: Option<Arc<dyn crate::trackers::TrackerStorage>>,
+    ) -> Result<Self> {
+        let download_dir = root_dir.join("rqbit-downloads");
+        let (backend, restored) = LibrqbitBackend::new(download_dir.clone()).await?;
+        Ok(Self::new_from_librqbit_parts(
+            root_dir,
+            download_dir,
+            backend,
+            restored,
+            tracker_storage,
+        ))
+    }
+
+    pub async fn new_disk_backed(
+        root_dir: std::path::PathBuf,
+        config: crate::backend::BackendConfig,
+        tracker_storage: Option<Arc<dyn crate::trackers::TrackerStorage>>,
+    ) -> Result<Self> {
+        Self::new_with_storage(root_dir, config, tracker_storage).await
+    }
+}
+
+#[cfg(feature = "libtorrent")]
+impl BackendEngineFS<LibtorrentBackend> {
+    pub async fn new(
+        root_dir: std::path::PathBuf,
+        config: crate::backend::BackendConfig,
+    ) -> Result<Self> {
+        Self::new_with_storage(root_dir, config, None).await
+    }
+
+    pub async fn new_with_storage(
+        root_dir: std::path::PathBuf,
+        config: crate::backend::BackendConfig,
+        tracker_storage: Option<Arc<dyn crate::trackers::TrackerStorage>>,
+    ) -> Result<Self> {
+        let download_dir = root_dir.join("libtorrent-downloads");
+        let cache_size = config.cache.size;
+        let backend = LibtorrentBackend::new(download_dir.clone(), config)?;
+
+        let mut efs = Self::new_with_backend_and_storage(
+            backend,
+            HashMap::new(),
+            download_dir.clone(),
+            download_dir,
+            tracker_storage,
+        );
+
+        // Set up disk cache for conditional file persistence
+        let disk_cache_dir = root_dir.join("disk-cache");
+        efs.disk_cache = Some(Arc::new(disk_cache::DiskCacheManager::new(
+            disk_cache_dir,
+            cache_size,
+        )));
+
+        Ok(efs)
+    }
+
+    pub async fn new_disk_backed(
+        root_dir: std::path::PathBuf,
+        config: crate::backend::BackendConfig,
+        tracker_storage: Option<Arc<dyn crate::trackers::TrackerStorage>>,
+    ) -> Result<Self> {
+        let download_dir = root_dir.join("torrent-cache");
+        let backend = LibtorrentBackend::new_disk_backed(download_dir.clone(), config)?;
+
+        Ok(Self::new_with_backend_and_storage(
+            backend,
+            HashMap::new(),
+            download_dir.clone(),
+            download_dir,
+            tracker_storage,
+        ))
+    }
 }
 
 #[cfg(test)]
@@ -1607,6 +1641,31 @@ mod tests {
 
     struct FakeBackend {
         handle: FakeHandle,
+    }
+
+    #[cfg(all(feature = "librqbit", not(feature = "libtorrent")))]
+    struct CachedTrackerStorage;
+
+    #[cfg(all(feature = "librqbit", not(feature = "libtorrent")))]
+    impl TrackerStorage for CachedTrackerStorage {
+        fn get_cached_trackers(&self) -> Vec<String> {
+            vec!["udp://cached.example:80/announce".to_string()]
+        }
+
+        fn get_last_updated(&self) -> i64 {
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .expect("system time after epoch")
+                .as_secs() as i64
+        }
+
+        fn get_source_url(&self) -> String {
+            panic!("fresh cached trackers should not require a network refresh")
+        }
+
+        fn save_trackers(&self, _trackers: Vec<String>, _timestamp: i64) {
+            panic!("fresh cached trackers should not be rewritten")
+        }
     }
 
     #[async_trait::async_trait]
@@ -1807,6 +1866,76 @@ mod tests {
             root.join("downloads"),
         );
         (enginefs, counters)
+    }
+
+    #[cfg(all(feature = "librqbit", not(feature = "libtorrent")))]
+    #[tokio::test]
+    async fn librqbit_constructor_uses_supplied_tracker_storage() {
+        let unique = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .expect("system time after epoch")
+            .as_nanos();
+        let root = std::env::temp_dir().join(format!(
+            "enginefs-librqbit-storage-test-{}-{unique}",
+            std::process::id()
+        ));
+
+        let download_dir = root.join("rqbit-downloads");
+        tokio::fs::create_dir_all(&download_dir)
+            .await
+            .expect("create librqbit test directory");
+        let session = librqbit::Session::new_with_opts(
+            download_dir.clone(),
+            librqbit::SessionOptions {
+                dht: None,
+                disable_local_service_discovery: true,
+                ..Default::default()
+            },
+        )
+        .await
+        .expect("create isolated librqbit test session");
+        let enginefs = BackendEngineFS::<LibrqbitBackend>::new_from_librqbit_parts(
+            root.clone(),
+            download_dir,
+            LibrqbitBackend { session },
+            HashMap::new(),
+            Some(Arc::new(CachedTrackerStorage)),
+        );
+
+        tokio::time::timeout(Duration::from_secs(1), async {
+            loop {
+                if enginefs.tracker_manager.get_trackers().await
+                    == ["udp://cached.example:80/announce"]
+                {
+                    break;
+                }
+                tokio::task::yield_now().await;
+            }
+        })
+        .await
+        .expect("cached tracker should be loaded by the librqbit constructor");
+
+        enginefs.backend.session.cancellation_token().cancel();
+        drop(enginefs);
+        tokio::task::yield_now().await;
+        let _ = tokio::fs::remove_dir_all(root).await;
+    }
+
+    #[tokio::test]
+    async fn generic_backend_exposes_server_control_api() {
+        let (enginefs, _counters) = test_enginefs();
+        let profile = crate::backend::TorrentSpeedProfile::default();
+        let privacy = crate::backend::TorrentPrivacyConfig::default();
+
+        enginefs.update_speed_profile(&profile).await;
+        enginefs.update_torrent_settings(&profile, &privacy).await;
+        enginefs.set_seeding_enabled(false);
+        enginefs.focus_torrent(TEST_HASH).await;
+        enginefs.resume_all_torrents().await;
+        enginefs.pause_all_torrents().await;
+        enginefs.set_streaming_mode(false).await;
+
+        assert!(!enginefs.seeding_enabled());
     }
 
     #[tokio::test]

@@ -1,0 +1,4 @@
+# Preserve third-party source formatting while keeping whitespace checks strict
+# for project-owned code.
+bindings/async-rar/vendor/unrar/** whitespace=-trailing-space
+bindings/async-sevenz/vendor/7zip/** whitespace=-trailing-space

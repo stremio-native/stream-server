@@ -36,8 +36,9 @@ jobs:
 
       - name: Install System Dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential cmake curl pkg-config libssl-dev libfuse2 libboost-dev libclang-dev libgtk-3-dev libayatana-appindicator3-dev
+          sudo sed -i 's|http://azure.archive.ubuntu.com/ubuntu|https://archive.ubuntu.com/ubuntu|g' /etc/apt/apt-mirrors.txt
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 update
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 install -y build-essential cmake curl pkg-config libssl-dev libfuse2 libboost-dev libclang-dev libgtk-3-dev libayatana-appindicator3-dev
 
       - name: Install libtorrent 2.1.1
         run: bash .github/scripts/install-libtorrent.sh
@@ -61,10 +62,16 @@ jobs:
         run: git restore server enginefs bindings stremio-runtime-stub updater-helper settings-gui
 
       - name: Run Clippy
-        run: cargo clippy --workspace --features libtorrent --no-default-features
+        run: cargo clippy --workspace --features libtorrent --no-default-features -- -D warnings
+
+      - name: Run Clippy for librqbit backend
+        run: cargo clippy -p enginefs -p server --all-targets --features librqbit --no-default-features -- -D warnings
 
       - name: Run Tests
         run: cargo test --workspace --features libtorrent --no-default-features
+
+      - name: Test librqbit backend
+        run: cargo test -p enginefs -p server --features librqbit --no-default-features
 
   build-windows:
     name: Build Windows
@@ -117,7 +124,7 @@ jobs:
         if: steps.vcpkg-cache.outputs.cache-hit != 'true'
         uses: lukka/run-vcpkg@v11
         with:
-          vcpkgGitCommitId: '84bab45d415d22042bd0b9081aea57f362da3f35'
+          vcpkgGitCommitId: '9e593bb18ea69cc5095e012465dcd675a822ed0d'
           vcpkgDirectory: '${{ github.workspace }}/vcpkg'
           vcpkgJsonGlob: 'vcpkg.json'
           runVcpkgInstall: true
@@ -218,8 +225,9 @@ jobs:
 
       - name: Install System Dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential cmake curl pkg-config libssl-dev libfuse2 libboost-dev libclang-dev libgtk-3-dev libayatana-appindicator3-dev
+          sudo sed -i 's|http://azure.archive.ubuntu.com/ubuntu|https://archive.ubuntu.com/ubuntu|g' /etc/apt/apt-mirrors.txt
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 update
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 install -y build-essential cmake curl pkg-config libssl-dev libfuse2 libboost-dev libclang-dev libgtk-3-dev libayatana-appindicator3-dev
 
       - name: Install libtorrent 2.1.1
         run: bash .github/scripts/install-libtorrent.sh

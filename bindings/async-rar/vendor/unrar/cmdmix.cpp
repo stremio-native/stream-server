@@ -1,8 +1,9 @@
 void CommandData::OutTitle()
 {
-  if (BareOutput || DisableCopyright)
+  // If -idc is present in configuration, -iver shall override it.
+  if (BareOutput || DisableCopyright && !PrintVersion)
     return;
-#if defined(__GNUC__) && defined(SFX_MODULE)
+#ifdef SFX_MODULE
   mprintf(St(MCopyrightS));
 #else
 #ifndef SILENT
@@ -27,7 +28,7 @@ void CommandData::OutTitle()
 #endif
   if (PrintVersion)
   {
-    mprintf(L"%s",Version);
+    mprintf(L"%s\n",Version);
     exit(0);
   }
   mprintf(St(MUCopyright),Version,RARVER_YEAR);
@@ -66,7 +67,7 @@ void CommandData::OutHelp(RAR_EXIT ExitCode)
     MCHelpSwINUL,MCHelpSwIOFF,MCHelpSwKB,MCHelpSwME,MCHelpSwMLP,
     MCHelpSwN,MCHelpSwNa,MCHelpSwNal,MCHelpSwO,MCHelpSwOC,MCHelpSwOL,
     MCHelpSwOM,MCHelpSwOP,MCHelpSwOR,MCHelpSwOW,MCHelpSwP,MCHelpSwR,
-    MCHelpSwRI,MCHelpSwSC,MCHelpSwSI,MCHelpSwSL,MCHelpSwSM,MCHelpSwTA,
+    MCHelpSwRI,MCHelpSwSC,MCHelpSwSI,MCHelpSwSL,MCHelpSwTA,
     MCHelpSwTB,MCHelpSwTN,MCHelpSwTO,MCHelpSwTS,MCHelpSwU,MCHelpSwVUnr,
     MCHelpSwVER,MCHelpSwVP,MCHelpSwX,MCHelpSwXa,MCHelpSwXal,MCHelpSwY
 #endif
@@ -75,8 +76,6 @@ void CommandData::OutHelp(RAR_EXIT ExitCode)
   for (uint I=0;I<ASIZE(Help);I++)
   {
 #ifndef SFX_MODULE
-    if (CmpMSGID(Help[I],MCHelpSwV))
-      continue;
 #ifndef _WIN_ALL
     static MSGID Win32Only[]={
       MCHelpSwIEML,MCHelpSwVD,MCHelpSwAO,MCHelpSwOS,MCHelpSwIOFF,

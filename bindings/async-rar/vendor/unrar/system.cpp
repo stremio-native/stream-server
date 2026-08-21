@@ -202,19 +202,9 @@ bool IsUserAdmin()
 #ifdef USE_SSE
 SSE_VERSION _SSE_Version=GetSSEVersion();
 
-#if defined(__GNUC__) && !defined(_MSC_VER)
-static inline void __cpuid(int CPUInfo[4], int InfoType) {
-    __asm__ __volatile__ (
-        "cpuid"
-        : "=a" (CPUInfo[0]), "=b" (CPUInfo[1]), "=c" (CPUInfo[2]), "=d" (CPUInfo[3])
-        : "a" (InfoType), "c" (0)
-    );
-}
-#endif
-
 SSE_VERSION GetSSEVersion()
 {
-#if defined(_MSC_VER) || defined(__ANDROID__)
+#ifdef _MSC_VER
   int CPUInfo[4];
   __cpuid(CPUInfo, 0);
 

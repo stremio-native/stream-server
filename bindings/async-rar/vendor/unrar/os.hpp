@@ -13,6 +13,7 @@
 #include <string>
 #include <vector>
 #include <deque>
+#include <stdexcept> // For std::length_error.
 #include <memory> // For automatic pointers.
 #include <algorithm>
 
@@ -52,6 +53,8 @@
 #pragma comment(lib, "Shlwapi.lib")
 #include <PowrProf.h>
 #pragma comment(lib, "PowrProf.lib")
+#include <psapi.h>
+#pragma comment(lib, "Psapi.lib") // For GetProcessMemoryInfo().
 #include <shellapi.h>
 #include <shlobj.h>
 #include <winioctl.h>
@@ -137,6 +140,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <stddef.h> // Needed for ptrdiff_t in some UnRAR source builds.
 #include <string.h>
 #include <ctype.h>
 #include <fcntl.h>
@@ -174,7 +178,7 @@
 #define SAVE_LINKS
 #endif
 
-#if (defined(__linux) && !defined(__ANDROID__)) || defined(__FreeBSD__)
+#if defined(__linux) || defined(__FreeBSD__)
 #include <sys/time.h>
 #define USE_LUTIMES
 #endif

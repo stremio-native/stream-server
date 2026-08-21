@@ -68,7 +68,7 @@ void CmdExtract::DoExtract()
   }
 
   Cmd->ArcNames.Rewind();
-  while (Cmd->GetArcName(ArcName))
+  for (uint ArcCount=0;Cmd->GetArcName(ArcName);ArcCount++)
   {
     if (Cmd->ManualPassword)
       Cmd->Password.Clean(); // Clean user entered password before processing next archive.
@@ -77,6 +77,12 @@ void CmdExtract::DoExtract()
     UseExactVolName=false; // Must be reset here, not in ExtractArchiveInit().
     while (true)
     {
+      // 2025.05.11: Add the empty line between tested archives here instead
+      // of printing two leading "\n" in "\n\nExtracting from", which caused
+      // the extra empty line after the copyright message.
+      if (ArcCount>0)
+        mprintf(L"\n");
+
       EXTRACT_ARC_CODE Code=ExtractArchive();
       if (Code!=EXTRACT_ARC_REPEAT)
         break;
@@ -532,7 +538,8 @@ bool CmdExtract::ExtractCurrentFile(Archive &Arc,size_t HeaderSize,bool &Repeat)
       ExtrPrepareName(Arc,ArcFileName,DestFileName);
 
     // DestFileName can be set empty in case of excessive -ap switch.
-    ExtrFile=!SkipSolid && !DestFileName.empty() && !Arc.FileHead.SplitBefore;
+    // Also exclude empty archived names here.
+    ExtrFile=!SkipSolid && !ArcFileName.empty() && !DestFileName.empty() && !Arc.FileHead.SplitBefore;
 
     if ((Cmd->FreshFiles || Cmd->UpdateFiles) && (Command=='E' || Command=='X'))
     {
@@ -704,6 +711,7 @@ bool CmdExtract::ExtractCurrentFile(Archive &Arc,size_t HeaderSize,bool &Repeat)
           if (!CheckWinLimit(Arc,ArcFileName))
             return false;
 
+          // 2025.09.03: OpenIndiana info is likely outdated, see https://www.illumos.org/issues/2000
           // Read+write mode is required to set "Compressed" attribute.
           // Other than that prefer the write only mode to avoid
           // OpenIndiana NAS problem with SetFileTime and read+write files.
@@ -809,7 +817,7 @@ bool CmdExtract::ExtractCurrentFile(Archive &Arc,size_t HeaderSize,bool &Repeat)
 
       uint64 Preallocated=0;
       if (!TestMode && !Arc.BrokenHeader && Arc.FileHead.UnpSize>1000000 &&
-          Arc.FileHead.PackSize*1024>Arc.FileHead.UnpSize && Arc.IsSeekable() &&
+          Arc.FileHead.PackSize>Arc.FileHead.UnpSize/1024 && Arc.IsSeekable() &&
           (Arc.FileHead.UnpSize<100000000 || Arc.FileLength()>Arc.FileHead.PackSize))
       {
         CurFile.Prealloc(Arc.FileHead.UnpSize);
@@ -838,6 +846,7 @@ bool CmdExtract::ExtractCurrentFile(Archive &Arc,size_t HeaderSize,bool &Repeat)
           // processed correctly.
           SlashToNative(Arc.FileHead.RedirName,RedirName);
 
+          // Ensure that target is inside of destination folder.
           ConvertPath(&RedirName,&RedirName);
 
           std::wstring NameExisting;
@@ -1160,6 +1169,15 @@ bool CmdExtract::ExtractFileCopy(File &New,const std::wstring &ArcName,const std
 
 void CmdExtract::ExtrPrepareName(Archive &Arc,const std::wstring &ArcFileName,std::wstring &DestName)
 {
+  if (ArcFileName.empty())
+  {
+    // Return the empty destination for empty source. Extraction code skips
+    // empty archived names without creating the destination path and issuing
+    // "can't create the file" error message.
+    DestName.clear();
+    return;
+  }
+
   if (Cmd->Test)
   {
     // Destination name conversion isn't needed for simple archive test.
@@ -1242,7 +1260,7 @@ void CmdExtract::ExtrPrepareName(Archive &Arc,const std::wstring &ArcFileName,st
     // We do not use a user specified destination path when extracting
     // absolute paths in -ep3 mode.
     wchar DiskLetter=toupperw(CurName[0]);
-    if (CurName[1]=='_' && IsPathDiv(CurName[2]) && DiskLetter>='A' && DiskLetter<='Z')
+    if (DiskLetter>='A' && DiskLetter<='Z' && CurName[1]=='_' && IsPathDiv(CurName[2]))
       DestName=CurName.substr(0,1) + L':' + CurName.substr(2);
     else
       if (CurName[0]=='_' && CurName[1]=='_')

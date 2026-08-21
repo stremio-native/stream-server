@@ -9,9 +9,9 @@ license = "MIT"
 name = "libtorrent_sys"
 
 [dependencies]
-cxx = "1.0"
+cxx = "1.0.199"
 
 [build-dependencies]
-cxx-build = "1.0"
-pkg-config = "0.3"
-vcpkg = "0.2"
+cxx-build = "1.0.199"
+pkg-config = "0.3.34"
+vcpkg = "0.2.15"

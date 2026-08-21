@@ -5,16 +5,16 @@ edition = "2021"
 
 [dependencies]
 autocxx = "0.30"
-cxx = "1.0"
-tokio = { version = "1.48", features = ["rt", "sync", "io-util"] }
-thiserror = "2"
+cxx = "1.0.199"
+tokio = { version = "1.53.1", features = ["rt", "sync", "io-util"] }
+thiserror = "2.0.20"
 moveit = "0.6"
 
 [build-dependencies]
 autocxx-build = "0.30"
-cc = "1.2"
-glob = "0.3"
+cc = "1.4.4"
+glob = "0.3.4"
 
 [dev-dependencies]
-tokio = { version = "1.48", features = ["rt-multi-thread", "macros"] }
-tempfile = "3"
+tokio = { version = "1.53.1", features = ["rt-multi-thread", "macros"] }
+tempfile = "3.27.0"
