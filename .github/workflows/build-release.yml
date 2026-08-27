@@ -1,0 +1,314 @@
+name: Build & Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_NET_RETRY: 10
+  CARGO_HTTP_MULTIPLEXING: false
+
+jobs:
+  build-linux:
+    name: Build Linux
+    runs-on: ubuntu-24.04
+    env:
+      LIBTORRENT_STATIC: "1"
+      PKG_CONFIG_PATH: /usr/local/lib/pkgconfig
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install cargo-chef and cargo-deb
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-chef,cargo-deb
+      - name: Install System Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake curl pkg-config libssl-dev libfuse2 libboost-dev libclang-dev libgtk-3-dev libayatana-appindicator3-dev
+      - name: Install libtorrent 2.1.1
+        run: bash .github/scripts/install-libtorrent.sh
+      - name: Cargo Chef Prepare
+        run: cargo chef prepare --recipe-path recipe.json
+      - name: Cargo Chef Cache
+        uses: actions/cache@v6
+        with:
+          path: target
+          key: ${{ runner.os }}-cargo-chef-${{ hashFiles('recipe.json') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-chef-
+      - name: Cargo Chef Cook
+        run: cargo chef cook --release --recipe-path recipe.json --features libtorrent --no-default-features
+      - name: Restore Source Code
+        run: git restore server enginefs bindings settings-gui
+      - name: Build Release
+        run: cargo build --release --features libtorrent --no-default-features
+      - name: Build DEB Package
+        run: cargo deb --package server --no-build
+      - name: Build AppImage
+        run: |
+          wget -q https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+          chmod +x linuxdeploy-x86_64.AppImage
+          mkdir -p AppDir/usr/bin AppDir/usr/share/applications AppDir/usr/share/icons/hicolor/256x256/apps
+          cp target/release/server AppDir/usr/bin/stream-server
+          cat > AppDir/usr/share/applications/stream-server.desktop << EOF
+          [Desktop Entry]
+          Type=Application
+          Name=Stream Server
+          Exec=stream-server
+          Icon=stream-server
+          Categories=Network;
+          EOF
+          convert -size 256x256 xc:steelblue -gravity center -pointsize 48 -fill white -annotate 0 "SS" AppDir/usr/share/icons/hicolor/256x256/apps/stream-server.png || echo "ImageMagick not available"
+          ./linuxdeploy-x86_64.AppImage --appdir AppDir --output appimage || true
+      - name: Upload Binary
+        uses: actions/upload-artifact@v7
+        with:
+          name: server-linux-amd64
+          path: |
+            target/release/server
+            target/release/settings-gui
+      - name: Upload DEB
+        uses: actions/upload-artifact@v7
+        with:
+          name: server-linux-deb
+          path: target/debian/*.deb
+      - name: Upload AppImage
+        uses: actions/upload-artifact@v7
+        with:
+          name: server-linux-appimage
+          path: "*.AppImage"
+          if-no-files-found: ignore
+
+  build-windows:
+    name: Build Windows
+    runs-on: windows-2022
+    env:
+      VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          target: x86_64-pc-windows-msvc
+      - name: Install cargo-chef and cargo-wix
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-chef,cargo-wix
+      - name: Cargo Registry Cache
+        uses: actions/cache@v6
+        with:
+          path: |
+            C:\Users\runneradmin\.cargo\registry
+            C:\Users\runneradmin\.cargo\git
+          key: Windows-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            Windows-cargo-registry-
+      - name: Export GitHub Actions cache env for vcpkg
+        uses: actions/github-script@v9
+        with:
+          script: |
+            core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL);
+            core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN);
+      - name: Cache vcpkg installed packages
+        id: vcpkg-cache
+        uses: actions/cache@v6
+        with:
+          path: vcpkg_installed
+          key: Windows-vcpkg-x86-64-v3-static-md-release-v1-${{ hashFiles('vcpkg.json','triplets/**','vcpkg-overlays/**') }}
+          restore-keys: |
+            Windows-vcpkg-x86-64-v3-static-md-release-v1-
+            Windows-vcpkg-x86-64-v3-static-md-release-
+      - name: Setup vcpkg
+        if: steps.vcpkg-cache.outputs.cache-hit != 'true'
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgGitCommitId: '84bab45d415d22042bd0b9081aea57f362da3f35'
+          vcpkgDirectory: '${{ github.workspace }}/vcpkg'
+          vcpkgJsonGlob: 'vcpkg.json'
+          runVcpkgInstall: true
+        env:
+          VCPKG_INSTALLED_DIR: ${{ github.workspace }}/vcpkg_installed
+          VCPKG_DEFAULT_TRIPLET: x64-windows-v3-static-md-release
+          VCPKG_OVERLAY_TRIPLETS: ${{ github.workspace }}/triplets
+          VCPKG_OVERLAY_PORTS: ${{ github.workspace }}/vcpkg-overlays
+      - name: Cargo Chef Prepare
+        run: cargo chef prepare --recipe-path recipe.json
+      - name: Cargo Chef Cache
+        uses: actions/cache@v6
+        with:
+          path: target
+          key: ${{ runner.os }}-cargo-chef-${{ hashFiles('recipe.json') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-chef-
+      - name: Cargo Chef Cook
+        run: |
+          $env:VCPKG_ROOT = "${{ github.workspace }}\vcpkg"
+          cargo chef cook --release --recipe-path recipe.json --target x86_64-pc-windows-msvc --features libtorrent --no-default-features
+        env:
+          VCPKG_ROOT: ${{ github.workspace }}\vcpkg
+          VCPKG_INSTALLED_DIR: ${{ github.workspace }}\vcpkg_installed
+          VCPKGRS_TRIPLET: x64-windows-v3-static-md-release
+          PKG_CONFIG_PATH: ${{ github.workspace }}\vcpkg_installed\x64-windows-v3-static-md-release\lib\pkgconfig
+      - name: Restore Source Code
+        run: git restore server enginefs bindings stremio-runtime-stub updater-helper settings-gui
+      - name: Build Release
+        run: |
+          cargo clean -p server --release
+          cargo build --release --target x86_64-pc-windows-msvc --features libtorrent --no-default-features
+          cargo build --release --target x86_64-pc-windows-msvc -p settings-gui
+          cargo build --release --target x86_64-pc-windows-msvc -p stremio-runtime-stub
+          cargo build --release --target x86_64-pc-windows-msvc -p updater-helper
+        env:
+          VCPKG_ROOT: ${{ github.workspace }}\vcpkg
+          VCPKG_INSTALLED_DIR: ${{ github.workspace }}\vcpkg_installed
+          VCPKGRS_TRIPLET: x64-windows-v3-static-md-release
+          PKG_CONFIG_PATH: ${{ github.workspace }}\vcpkg_installed\x64-windows-v3-static-md-release\lib\pkgconfig
+      - name: Upload EXE
+        uses: actions/upload-artifact@v7
+        with:
+          name: server-windows-amd64
+          path: |
+            target/x86_64-pc-windows-msvc/release/server.exe
+            target/x86_64-pc-windows-msvc/release/settings-gui.exe
+            target/x86_64-pc-windows-msvc/release/stremio-runtime.exe
+            target/x86_64-pc-windows-msvc/release/stream-server-updater.exe
+      - name: Build MSI Installer
+        run: cargo wix --package server --no-build --nocapture --target x86_64-pc-windows-msvc
+        env:
+          VCPKG_ROOT: ${{ github.workspace }}\vcpkg
+          VCPKG_INSTALLED_DIR: ${{ github.workspace }}\vcpkg_installed
+          VCPKGRS_TRIPLET: x64-windows-v3-static-md-release
+          PKG_CONFIG_PATH: ${{ github.workspace }}\vcpkg_installed\x64-windows-v3-static-md-release\lib\pkgconfig
+      - name: Upload MSI
+        uses: actions/upload-artifact@v7
+        with:
+          name: server-windows-msi
+          path: target/wix/*.msi
+
+  build-arch:
+    name: Build Arch Linux
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    container: archlinux:latest
+    env:
+      LIBTORRENT_STATIC: "1"
+      PKG_CONFIG_PATH: /usr/local/lib/pkgconfig
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install dependencies
+        run: |
+          pacman -Syu --noconfirm
+          pacman -S --needed --noconfirm base-devel cmake curl rust git openssl pkg-config boost clang gtk3 libayatana-appindicator
+      - name: Install libtorrent 2.1.1
+        run: bash .github/scripts/install-libtorrent.sh
+      - name: Cargo Cache
+        uses: actions/cache@v6
+        with:
+          path: |
+            target
+            /root/.cargo/registry
+            /root/.cargo/git
+          key: arch-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            arch-cargo-
+      - name: Build binary
+        run: cargo build --release --features libtorrent --no-default-features
+      - name: Create PKGBUILD
+        run: |
+          mkdir -p pkg
+          cat > pkg/PKGBUILD << 'EOF'
+          # Maintainer: stream-server maintainers
+          pkgname=stream-server
+          pkgver=0.1.0
+          pkgrel=1
+          pkgdesc="High-performance torrent streaming server with HLS transcoding"
+          arch=('x86_64')
+          url="https://github.com/perpetus/stream-server"
+          license=('MIT')
+          depends=('openssl' 'boost-libs')
+          source=("stream-server" "settings-gui")
+          sha256sums=('SKIP' 'SKIP')
+          package() {
+              install -Dm755 "$srcdir/stream-server" "$pkgdir/usr/bin/stream-server"
+              install -Dm755 "$srcdir/settings-gui" "$pkgdir/usr/bin/settings-gui"
+          }
+          EOF
+          cp target/release/server pkg/stream-server
+          cp target/release/settings-gui pkg/settings-gui
+      - name: Build package
+        run: |
+          cd pkg
+          useradd -m builder
+          chown -R builder:builder .
+          su builder -c "makepkg -sf --noconfirm"
+      - name: Upload Arch Package
+        uses: actions/upload-artifact@v7
+        with:
+          name: server-arch-pkg
+          path: pkg/*.pkg.tar.zst
+
+  release:
+    name: Create Release
+    needs: [build-linux, build-windows, build-arch]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Download all artifacts
+        uses: actions/download-artifact@v8
+        with:
+          path: artifacts
+      - name: Prepare release files
+        run: |
+          mkdir -p release
+          copy_file() {
+            src="$1"
+            dest="$2"
+            [ -f "$src" ] || return 0
+            cp "$src" "release/${dest}"
+          }
+          copy_latest() {
+            source_dir="$1"
+            pattern="$2"
+            dest="$3"
+            [ -d "$source_dir" ] || return 0
+            src="$(find "$source_dir" -maxdepth 1 -type f -name "$pattern" | sort -V | tail -n 1)"
+            [ -n "$src" ] || return 0
+            cp "$src" "release/${dest}"
+          }
+          copy_file artifacts/server-windows-amd64/server.exe stream-server-windows-amd64.exe
+          copy_file artifacts/server-windows-amd64/settings-gui.exe stream-server-settings-windows-amd64.exe
+          copy_file artifacts/server-windows-amd64/stremio-runtime.exe stremio-runtime-windows-amd64.exe
+          copy_file artifacts/server-windows-amd64/stream-server-updater.exe stream-server-updater-windows-amd64.exe
+          copy_latest artifacts/server-windows-msi "*.msi" stream-server-windows-amd64.msi
+          copy_file artifacts/server-linux-amd64/server stream-server-linux-amd64
+          copy_file artifacts/server-linux-amd64/settings-gui stream-server-settings-linux-amd64
+          copy_latest artifacts/server-linux-deb "*.deb" stream-server-linux-amd64.deb
+          copy_latest artifacts/server-linux-appimage "*.AppImage" stream-server-linux-amd64.AppImage
+          copy_latest artifacts/server-arch-pkg "stream-server-[0-9]*.pkg.tar.zst" stream-server-arch-x86_64.pkg.tar.zst
+          (cd release && sha256sum * > SHA256SUMS.txt)
+          ls -la release/
+      - name: Generate release description
+        run: |
+          prev_tag=$(git describe --tags --abbrev=0 "${GITHUB_REF_NAME}^" 2>/dev/null || true)
+          python scripts/generate_release_notes.py \
+            --repo "${GITHUB_REPOSITORY}" \
+            --tag "${GITHUB_REF_NAME}" \
+            --previous-tag "${prev_tag}" \
+            --asset-dir release \
+            --output "${GITHUB_WORKSPACE}/RELEASE_BODY.md"
+          cat "${GITHUB_WORKSPACE}/RELEASE_BODY.md"
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          files: release/*
+          body_path: ${{ github.workspace }}/RELEASE_BODY.md
+          generate_release_notes: false
+          prerelease: ${{ contains(github.ref, 'beta') || contains(github.ref, 'alpha') || contains(github.ref, 'rc') }}

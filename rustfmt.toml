@@ -1,0 +1,5 @@
+edition = "2024"
+use_field_init_shorthand = true
+reorder_imports = true
+reorder_modules = true
+fn_params_layout = "Compressed"
