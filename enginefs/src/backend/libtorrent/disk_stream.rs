@@ -20,13 +20,8 @@ fn forward_window_end(piece: i32, last_piece: i32, piece_count: i32) -> i32 {
 }
 
 fn broker_slice_bounds(
-    piece: i32,
-    piece_length: u64,
-    file_offset: u64,
-    current_pos: u64,
-    file_size: u64,
-    piece_bytes: usize,
-    requested_bytes: usize,
+    piece: i32, piece_length: u64, file_offset: u64, current_pos: u64, file_size: u64,
+    piece_bytes: usize, requested_bytes: usize,
 ) -> Option<(usize, usize)> {
     let piece_start = (piece.max(0) as u64).saturating_mul(piece_length);
     let global_position = file_offset.saturating_add(current_pos);
@@ -85,23 +80,12 @@ pub(crate) struct LibtorrentDiskFileStream {
 impl LibtorrentDiskFileStream {
     #[allow(clippy::too_many_arguments)]
     pub(crate) fn new(
-        handle: libtorrent_sys::LibtorrentHandle,
-        info_hash: String,
-        file_path: PathBuf,
-        display_path: String,
-        first_piece: i32,
-        last_piece: i32,
-        piece_length: u64,
-        file_offset: u64,
-        file_size: u64,
-        file_idx: usize,
-        stream_id: usize,
-        playback_intent: PlaybackIntent,
-        bitrate_bytes_per_sec: Option<u64>,
-        piece_waiter: Arc<PieceWaiterRegistry>,
-        metadata_pins: Arc<MetadataPinRegistry>,
-        file: Option<tokio::fs::File>,
-        alert_hub: Arc<super::alerts::LibtorrentAlertHub>,
+        handle: libtorrent_sys::LibtorrentHandle, info_hash: String, file_path: PathBuf,
+        display_path: String, first_piece: i32, last_piece: i32, piece_length: u64,
+        file_offset: u64, file_size: u64, file_idx: usize, stream_id: usize,
+        playback_intent: PlaybackIntent, bitrate_bytes_per_sec: Option<u64>,
+        piece_waiter: Arc<PieceWaiterRegistry>, metadata_pins: Arc<MetadataPinRegistry>,
+        file: Option<tokio::fs::File>, alert_hub: Arc<super::alerts::LibtorrentAlertHub>,
         playback_permit: super::playback::LibtorrentPlaybackPermit,
     ) -> Self {
         Self {
@@ -223,8 +207,7 @@ impl LibtorrentDiskFileStream {
     }
 
     fn extend_with_pinned_metadata(
-        &self,
-        assignments: &mut Vec<super::playback::LibtorrentPiecePriority>,
+        &self, assignments: &mut Vec<super::playback::LibtorrentPiecePriority>,
         pinned_missing: &[i32],
     ) {
         for &p in pinned_missing {
@@ -402,9 +385,7 @@ impl LibtorrentDiskFileStream {
     }
 
     fn wait_for_piece(
-        &mut self,
-        piece: i32,
-        cx: &mut std::task::Context<'_>,
+        &mut self, piece: i32, cx: &mut std::task::Context<'_>,
     ) -> std::task::Poll<std::io::Result<()>> {
         self.consecutive_waits = self.consecutive_waits.saturating_add(1);
         self.prioritize_from(piece);
@@ -533,9 +514,7 @@ impl LibtorrentDiskFileStream {
     }
 
     fn poll_piece_broker(
-        &mut self,
-        cx: &mut std::task::Context<'_>,
-        piece: i32,
+        &mut self, cx: &mut std::task::Context<'_>, piece: i32,
     ) -> std::io::Result<()> {
         let Some((requested, task)) = self.piece_read.as_mut() else {
             return Ok(());
@@ -660,8 +639,7 @@ impl LibtorrentDiskFileStream {
 
 impl tokio::io::AsyncRead for LibtorrentDiskFileStream {
     fn poll_read(
-        mut self: std::pin::Pin<&mut Self>,
-        cx: &mut std::task::Context<'_>,
+        mut self: std::pin::Pin<&mut Self>, cx: &mut std::task::Context<'_>,
         buf: &mut tokio::io::ReadBuf<'_>,
     ) -> std::task::Poll<std::io::Result<()>> {
         use tokio::io::AsyncSeek;
@@ -801,8 +779,7 @@ impl tokio::io::AsyncRead for LibtorrentDiskFileStream {
 
 impl tokio::io::AsyncSeek for LibtorrentDiskFileStream {
     fn start_seek(
-        mut self: std::pin::Pin<&mut Self>,
-        position: std::io::SeekFrom,
+        mut self: std::pin::Pin<&mut Self>, position: std::io::SeekFrom,
     ) -> std::io::Result<()> {
         let new_pos = match position {
             std::io::SeekFrom::Start(pos) => pos,
@@ -826,8 +803,7 @@ impl tokio::io::AsyncSeek for LibtorrentDiskFileStream {
     }
 
     fn poll_complete(
-        self: std::pin::Pin<&mut Self>,
-        _cx: &mut std::task::Context<'_>,
+        self: std::pin::Pin<&mut Self>, _cx: &mut std::task::Context<'_>,
     ) -> std::task::Poll<std::io::Result<u64>> {
         std::task::Poll::Ready(Ok(self.current_pos))
     }

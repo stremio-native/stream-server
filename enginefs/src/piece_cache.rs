@@ -31,8 +31,7 @@ pub struct PieceCacheConfig {
 impl PieceCacheConfig {
     /// Create config from EngineCacheConfig
     pub fn from_engine_config(
-        engine_config: &crate::backend::priorities::EngineCacheConfig,
-        cache_path: PathBuf,
+        engine_config: &crate::backend::priorities::EngineCacheConfig, cache_path: PathBuf,
     ) -> Self {
         Self {
             // Dynamic: 0 = unlimited, let moka evict based on TTI

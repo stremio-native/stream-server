@@ -15,10 +15,7 @@ struct ImdbNode {
 }
 
 pub async fn resolve_imdb(
-    client: &Client,
-    title: &str,
-    year: Option<i32>,
-    type_: &str,
+    client: &Client, title: &str, year: Option<i32>, type_: &str,
 ) -> Option<String> {
     let _ = type_; // Might use later for filtering
     let safe_title = urlencoding::encode(title);

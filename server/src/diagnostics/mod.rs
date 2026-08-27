@@ -275,8 +275,7 @@ pub fn start_memory_sampler(state: AppState) -> tokio::task::JoinHandle<()> {
 }
 
 pub async fn memory(
-    State(state): State<AppState>,
-    ConnectInfo(addr): ConnectInfo<SocketAddr>,
+    State(state): State<AppState>, ConnectInfo(addr): ConnectInfo<SocketAddr>,
 ) -> Response {
     if let Err(response) = ensure_local(addr) {
         return response.into_response();
@@ -286,8 +285,7 @@ pub async fn memory(
 }
 
 pub async fn streams(
-    State(state): State<AppState>,
-    ConnectInfo(addr): ConnectInfo<SocketAddr>,
+    State(state): State<AppState>, ConnectInfo(addr): ConnectInfo<SocketAddr>,
 ) -> Response {
     if let Err(response) = ensure_local(addr) {
         return response.into_response();
@@ -297,8 +295,7 @@ pub async fn streams(
 }
 
 pub async fn crashes(
-    State(state): State<AppState>,
-    ConnectInfo(addr): ConnectInfo<SocketAddr>,
+    State(state): State<AppState>, ConnectInfo(addr): ConnectInfo<SocketAddr>,
 ) -> Response {
     if let Err(response) = ensure_local(addr) {
         return response.into_response();
@@ -308,8 +305,7 @@ pub async fn crashes(
 }
 
 pub async fn logs(
-    State(state): State<AppState>,
-    ConnectInfo(addr): ConnectInfo<SocketAddr>,
+    State(state): State<AppState>, ConnectInfo(addr): ConnectInfo<SocketAddr>,
 ) -> Response {
     if let Err(response) = ensure_local(addr) {
         return response.into_response();
@@ -319,8 +315,7 @@ pub async fn logs(
 }
 
 pub async fn current_log(
-    State(state): State<AppState>,
-    ConnectInfo(addr): ConnectInfo<SocketAddr>,
+    State(state): State<AppState>, ConnectInfo(addr): ConnectInfo<SocketAddr>,
     Query(query): Query<CurrentLogQuery>,
 ) -> Response {
     if let Err(response) = ensure_local(addr) {
@@ -368,8 +363,7 @@ pub async fn current_log(
 }
 
 pub async fn export(
-    State(state): State<AppState>,
-    ConnectInfo(addr): ConnectInfo<SocketAddr>,
+    State(state): State<AppState>, ConnectInfo(addr): ConnectInfo<SocketAddr>,
 ) -> Response {
     if let Err(response) = ensure_local(addr) {
         return response.into_response();

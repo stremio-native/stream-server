@@ -41,9 +41,7 @@ struct FileInfo {
 }
 
 pub fn start_tui(
-    app_state: Arc<AppState>,
-    log_rx: Receiver<String>,
-    shutdown_tx: tokio::sync::mpsc::Sender<()>,
+    app_state: Arc<AppState>, log_rx: Receiver<String>, shutdown_tx: tokio::sync::mpsc::Sender<()>,
 ) {
     let (stats_tx, stats_rx) = crossbeam_channel::bounded(1);
     let (files_tx, files_rx) = crossbeam_channel::bounded(1);
@@ -100,12 +98,9 @@ pub fn start_tui(
 }
 
 fn run_tui(
-    app_state: Arc<AppState>,
-    log_rx: Receiver<String>,
-    stats_rx: Receiver<HashMap<String, EngineStats>>,
-    files_rx: Receiver<Vec<FileInfo>>,
-    rt: tokio::runtime::Handle,
-    shutdown_tx: tokio::sync::mpsc::Sender<()>,
+    app_state: Arc<AppState>, log_rx: Receiver<String>,
+    stats_rx: Receiver<HashMap<String, EngineStats>>, files_rx: Receiver<Vec<FileInfo>>,
+    rt: tokio::runtime::Handle, shutdown_tx: tokio::sync::mpsc::Sender<()>,
 ) -> Result<()> {
     enable_raw_mode()?;
     let mut stdout = io::stdout();

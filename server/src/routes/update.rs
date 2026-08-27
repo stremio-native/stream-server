@@ -63,8 +63,7 @@ pub fn router() -> Router<AppState> {
 }
 
 async fn status(
-    State(state): State<AppState>,
-    ConnectInfo(addr): ConnectInfo<SocketAddr>,
+    State(state): State<AppState>, ConnectInfo(addr): ConnectInfo<SocketAddr>,
 ) -> Response {
     if let Err(response) = ensure_local(addr) {
         return response.into_response();
@@ -77,8 +76,7 @@ async fn status(
 }
 
 async fn changelog(
-    State(state): State<AppState>,
-    ConnectInfo(addr): ConnectInfo<SocketAddr>,
+    State(state): State<AppState>, ConnectInfo(addr): ConnectInfo<SocketAddr>,
     Query(query): Query<ChangelogQuery>,
 ) -> Response {
     if let Err(response) = ensure_local(addr) {
@@ -90,8 +88,7 @@ async fn changelog(
 }
 
 async fn check(
-    State(state): State<AppState>,
-    ConnectInfo(addr): ConnectInfo<SocketAddr>,
+    State(state): State<AppState>, ConnectInfo(addr): ConnectInfo<SocketAddr>,
     payload: Option<Json<CheckRequest>>,
 ) -> Response {
     if let Err(response) = ensure_local(addr) {
@@ -111,8 +108,7 @@ async fn check(
 }
 
 async fn download(
-    State(state): State<AppState>,
-    ConnectInfo(addr): ConnectInfo<SocketAddr>,
+    State(state): State<AppState>, ConnectInfo(addr): ConnectInfo<SocketAddr>,
 ) -> Response {
     if let Err(response) = ensure_local(addr) {
         return response.into_response();
@@ -125,8 +121,7 @@ async fn download(
 }
 
 async fn install(
-    State(state): State<AppState>,
-    ConnectInfo(addr): ConnectInfo<SocketAddr>,
+    State(state): State<AppState>, ConnectInfo(addr): ConnectInfo<SocketAddr>,
     payload: Option<Json<InstallRequest>>,
 ) -> Response {
     if let Err(response) = ensure_local(addr) {
@@ -146,8 +141,7 @@ async fn install(
 }
 
 async fn cancel(
-    State(state): State<AppState>,
-    ConnectInfo(addr): ConnectInfo<SocketAddr>,
+    State(state): State<AppState>, ConnectInfo(addr): ConnectInfo<SocketAddr>,
 ) -> Response {
     if let Err(response) = ensure_local(addr) {
         return response.into_response();

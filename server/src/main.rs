@@ -303,10 +303,10 @@ mod app {
         ];
 
         for (program, args) in attempts {
-            if let Ok(status) = std::process::Command::new(program).args(args).status() {
-                if status.success() {
-                    return;
-                }
+            if let Ok(status) = std::process::Command::new(program).args(args).status()
+                && status.success()
+            {
+                return;
             }
         }
 

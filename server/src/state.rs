@@ -52,18 +52,14 @@ impl AppState {
 
     #[allow(unused)]
     pub fn new_with_shared_settings(
-        engine: Arc<EngineFS>,
-        settings: Arc<RwLock<ServerSettings>>,
-        config_dir: PathBuf,
+        engine: Arc<EngineFS>, settings: Arc<RwLock<ServerSettings>>, config_dir: PathBuf,
     ) -> Self {
         let log_dir = config_dir.join("logs");
         Self::new_with_shared_settings_and_log_dir(engine, settings, config_dir, log_dir)
     }
 
     pub fn new_with_shared_settings_and_log_dir(
-        engine: Arc<EngineFS>,
-        settings: Arc<RwLock<ServerSettings>>,
-        config_dir: PathBuf,
+        engine: Arc<EngineFS>, settings: Arc<RwLock<ServerSettings>>, config_dir: PathBuf,
         log_dir: PathBuf,
     ) -> Self {
         Self::new_with_shared_settings_log_dir_and_download_engine(
@@ -77,12 +73,8 @@ impl AppState {
     }
 
     pub fn new_with_shared_settings_log_dir_and_download_engine(
-        engine: Arc<EngineFS>,
-        download_engine: Arc<EngineFS>,
-        download_engine_disk_backed: bool,
-        settings: Arc<RwLock<ServerSettings>>,
-        config_dir: PathBuf,
-        log_dir: PathBuf,
+        engine: Arc<EngineFS>, download_engine: Arc<EngineFS>, download_engine_disk_backed: bool,
+        settings: Arc<RwLock<ServerSettings>>, config_dir: PathBuf, log_dir: PathBuf,
     ) -> Self {
         let settings_path = config_dir.join("settings.json");
         let updater = Arc::new(crate::updater::UpdateManager::new(config_dir.clone()));
@@ -121,8 +113,7 @@ impl AppState {
     }
 
     pub fn load_settings(
-        config_dir: &std::path::Path,
-        defaults: &ServerSettings,
+        config_dir: &std::path::Path, defaults: &ServerSettings,
     ) -> ServerSettings {
         let settings_path = config_dir.join("settings.json");
 

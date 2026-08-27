@@ -368,8 +368,7 @@ mod ffi {
         // Session settings
         // ------------------------------------------------------------------------
         fn session_apply_settings(
-            session: Pin<&mut Session>,
-            settings: &SessionSettings,
+            session: Pin<&mut Session>, settings: &SessionSettings,
         ) -> Result<()>;
         fn session_get_download_rate_limit(session: &Session) -> i32;
         fn session_get_upload_rate_limit(session: &Session) -> i32;
@@ -380,18 +379,13 @@ mod ffi {
         // Add/Remove torrents
         // ------------------------------------------------------------------------
         fn session_add_torrent(
-            session: Pin<&mut Session>,
-            params: &AddTorrentParams,
+            session: Pin<&mut Session>, params: &AddTorrentParams,
         ) -> Result<UniquePtr<TorrentHandle>>;
         fn session_add_magnet(
-            session: Pin<&mut Session>,
-            magnet_uri: &str,
-            save_path: &str,
+            session: Pin<&mut Session>, magnet_uri: &str, save_path: &str,
         ) -> Result<UniquePtr<TorrentHandle>>;
         fn session_remove_torrent(
-            session: Pin<&mut Session>,
-            handle: &TorrentHandle,
-            delete_files: bool,
+            session: Pin<&mut Session>, handle: &TorrentHandle, delete_files: bool,
         ) -> Result<()>;
 
         // ------------------------------------------------------------------------
@@ -399,8 +393,7 @@ mod ffi {
         // ------------------------------------------------------------------------
         fn session_get_torrents(session: &Session) -> Vec<TorrentStatus>;
         fn session_find_torrent(
-            session: &Session,
-            info_hash: &str,
+            session: &Session, info_hash: &str,
         ) -> Result<UniquePtr<TorrentHandle>>;
         fn session_get_torrent_status(session: &Session, info_hash: &str) -> Result<TorrentStatus>;
 
@@ -454,9 +447,7 @@ mod ffi {
         fn handle_force_recheck(handle: Pin<&mut TorrentHandle>);
         fn handle_force_reannounce(handle: Pin<&mut TorrentHandle>);
         fn handle_force_reannounce_with_flags(
-            handle: Pin<&mut TorrentHandle>,
-            high_priority: bool,
-            ignore_min_interval: bool,
+            handle: Pin<&mut TorrentHandle>, high_priority: bool, ignore_min_interval: bool,
         );
         fn handle_force_dht_announce(handle: Pin<&mut TorrentHandle>);
         fn handle_flush_cache(handle: Pin<&mut TorrentHandle>);
@@ -468,9 +459,7 @@ mod ffi {
         fn handle_is_sequential_download(handle: &TorrentHandle) -> bool;
         fn handle_set_piece_deadline(handle: Pin<&mut TorrentHandle>, piece: i32, deadline_ms: i32);
         fn handle_set_piece_deadline_with_alert(
-            handle: Pin<&mut TorrentHandle>,
-            piece: i32,
-            deadline_ms: i32,
+            handle: Pin<&mut TorrentHandle>, piece: i32, deadline_ms: i32,
             alert_when_available: bool,
         );
         fn handle_reset_piece_deadline(handle: Pin<&mut TorrentHandle>, piece: i32);
@@ -484,9 +473,7 @@ mod ffi {
         fn handle_set_file_priority(handle: Pin<&mut TorrentHandle>, index: i32, priority: i32);
         fn handle_set_file_priorities(handle: Pin<&mut TorrentHandle>, priorities: &[i32]);
         fn handle_rename_file(
-            handle: Pin<&mut TorrentHandle>,
-            index: i32,
-            new_name: &str,
+            handle: Pin<&mut TorrentHandle>, index: i32, new_name: &str,
         ) -> Result<()>;
         fn handle_move_storage(handle: Pin<&mut TorrentHandle>, new_path: &str) -> Result<()>;
 
@@ -500,8 +487,7 @@ mod ffi {
         fn handle_get_piece_availability(handle: &TorrentHandle) -> Vec<i32>;
         fn handle_set_piece_priority(handle: Pin<&mut TorrentHandle>, piece: i32, priority: i32);
         fn handle_set_piece_priorities(
-            handle: Pin<&mut TorrentHandle>,
-            priorities: &[PiecePriority],
+            handle: Pin<&mut TorrentHandle>, priorities: &[PiecePriority],
         );
         fn handle_get_piece_priorities(handle: &TorrentHandle) -> Vec<i32>;
         fn handle_read_piece(handle: Pin<&mut TorrentHandle>, piece: i32) -> Result<()>; // Async via alert
@@ -589,8 +575,7 @@ impl LibtorrentSession {
 
     /// Add a torrent using full params
     pub fn add_torrent(
-        &mut self,
-        params: &AddTorrentParams,
+        &mut self, params: &AddTorrentParams,
     ) -> Result<LibtorrentHandle, cxx::Exception> {
         let handle = ffi::session_add_torrent(self.inner.pin_mut(), params)?;
         Ok(LibtorrentHandle { inner: handle })
@@ -598,9 +583,7 @@ impl LibtorrentSession {
 
     /// Add a torrent from a magnet URI
     pub fn add_magnet(
-        &mut self,
-        magnet_uri: &str,
-        save_path: &str,
+        &mut self, magnet_uri: &str, save_path: &str,
     ) -> Result<LibtorrentHandle, cxx::Exception> {
         let handle = ffi::session_add_magnet(self.inner.pin_mut(), magnet_uri, save_path)?;
         Ok(LibtorrentHandle { inner: handle })
@@ -608,9 +591,7 @@ impl LibtorrentSession {
 
     /// Remove a torrent
     pub fn remove_torrent(
-        &mut self,
-        handle: &LibtorrentHandle,
-        delete_files: bool,
+        &mut self, handle: &LibtorrentHandle, delete_files: bool,
     ) -> Result<(), cxx::Exception> {
         ffi::session_remove_torrent(self.inner.pin_mut(), &handle.inner, delete_files)
     }
@@ -769,10 +750,7 @@ impl LibtorrentHandle {
     /// Set a streaming deadline and optionally request a `read_piece_alert`
     /// containing the piece bytes as soon as the piece becomes available.
     pub fn set_piece_deadline_with_alert(
-        &mut self,
-        piece: i32,
-        deadline_ms: i32,
-        alert_when_available: bool,
+        &mut self, piece: i32, deadline_ms: i32, alert_when_available: bool,
     ) {
         ffi::handle_set_piece_deadline_with_alert(
             self.inner.pin_mut(),

@@ -157,9 +157,7 @@ pub async fn extract_all(archive_path: impl AsRef<Path>, dest: impl AsRef<Path>)
 
 /// Extract all files from a password-protected RAR archive
 pub async fn extract_all_with_password(
-    archive_path: impl AsRef<Path>,
-    dest: impl AsRef<Path>,
-    password: &str,
+    archive_path: impl AsRef<Path>, dest: impl AsRef<Path>, password: &str,
 ) -> Result<()> {
     let archive_path = archive_path.as_ref().to_owned();
     let dest = dest.as_ref().to_owned();

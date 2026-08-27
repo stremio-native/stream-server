@@ -35,8 +35,7 @@ pub struct StatsParams {
 }
 
 pub async fn get_stats(
-    State(state): State<AppState>,
-    Query(params): Query<StatsParams>,
+    State(state): State<AppState>, Query(params): Query<StatsParams>,
 ) -> impl IntoResponse {
     let engines = combined_engine_stats(&state).await;
 
@@ -352,10 +351,7 @@ fn update_u16_setting(obj: &serde_json::Map<String, Value>, key: &str, target: &
 }
 
 fn update_string_setting(
-    obj: &serde_json::Map<String, Value>,
-    key: &str,
-    target: &mut String,
-    trim: bool,
+    obj: &serde_json::Map<String, Value>, key: &str, target: &mut String, trim: bool,
     allow_empty: bool,
 ) {
     if let Some(value) = obj.get(key).and_then(Value::as_str) {
@@ -668,8 +664,7 @@ pub async fn update_settings(state: &AppState, payload: &Value) -> anyhow::Resul
 }
 
 pub async fn set_settings(
-    State(state): State<AppState>,
-    Json(payload): Json<Value>,
+    State(state): State<AppState>, Json(payload): Json<Value>,
 ) -> impl IntoResponse {
     match update_settings(&state, &payload).await {
         Ok(_) => Json(json!({ "success": true })),
@@ -918,8 +913,7 @@ pub async fn get_samples(
 }
 
 pub async fn get_engine_stats(
-    State(state): State<AppState>,
-    axum::extract::Path(info_hash): axum::extract::Path<String>,
+    State(state): State<AppState>, axum::extract::Path(info_hash): axum::extract::Path<String>,
 ) -> Response {
     let info_hash = info_hash.to_lowercase();
 

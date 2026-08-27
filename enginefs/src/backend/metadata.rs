@@ -36,9 +36,7 @@ pub struct MetadataInspector;
 impl MetadataInspector {
     /// Find critical ranges AND keyframe positions for optimal piece prioritization
     pub async fn find_critical_ranges<R>(
-        reader: &mut R,
-        total_size: u64,
-        filename: &str,
+        reader: &mut R, total_size: u64, filename: &str,
     ) -> Vec<(u64, u64)>
     where
         R: AsyncRead + AsyncSeek + Unpin,
@@ -72,9 +70,7 @@ impl MetadataInspector {
 
     /// Find keyframe byte offsets for prioritization
     pub async fn find_keyframe_offsets<R>(
-        reader: &mut R,
-        total_size: u64,
-        filename: &str,
+        reader: &mut R, total_size: u64, filename: &str,
     ) -> Vec<u64>
     where
         R: AsyncRead + AsyncSeek + Unpin,

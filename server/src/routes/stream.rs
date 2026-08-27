@@ -31,10 +31,7 @@ struct StreamLifecycleGuard {
 
 impl StreamLifecycleGuard {
     fn new(
-        engine: Arc<enginefs::EngineFS>,
-        info_hash: String,
-        file_idx: usize,
-        stream_id: u64,
+        engine: Arc<enginefs::EngineFS>, info_hash: String, file_idx: usize, stream_id: u64,
     ) -> Self {
         crate::diagnostics::logging::direct_stream_started();
         Self {
@@ -181,12 +178,7 @@ fn query_value_is_true(value: &str) -> bool {
 }
 
 fn playback_intent_for_request(
-    is_hls: bool,
-    priority: u8,
-    start: u64,
-    requested_len: u64,
-    file_size: u64,
-    is_download: bool,
+    is_hls: bool, priority: u8, start: u64, requested_len: u64, file_size: u64, is_download: bool,
     is_partial: bool,
 ) -> PlaybackIntent {
     if priority == 255 {
@@ -299,11 +291,7 @@ fn available_space_for_path_uncached(path: &FsPath) -> Option<u64> {
 }
 
 fn ensure_download_disk_ready(
-    root: &FsPath,
-    file_name: &str,
-    file_size: u64,
-    requested_len: u64,
-    is_partial: bool,
+    root: &FsPath, file_name: &str, file_size: u64, requested_len: u64, is_partial: bool,
 ) -> Result<(), String> {
     std::fs::create_dir_all(root).map_err(|e| {
         format!(
@@ -360,10 +348,8 @@ fn disk_space_check_treats_as_partial(is_download: bool, is_partial: bool) -> bo
 }
 
 pub async fn head_stream_video(
-    State(state): State<AppState>,
-    headers: HeaderMap,
-    Path((info_hash, requested_idx)): Path<(String, String)>,
-    RawQuery(query_str): RawQuery,
+    State(state): State<AppState>, headers: HeaderMap,
+    Path((info_hash, requested_idx)): Path<(String, String)>, RawQuery(query_str): RawQuery,
 ) -> Response {
     let request_start = Instant::now();
     let info_hash = info_hash.to_lowercase();
@@ -477,10 +463,8 @@ pub async fn head_stream_video(
 }
 
 pub async fn stream_video(
-    State(state): State<AppState>,
-    headers: HeaderMap,
-    Path((info_hash, requested_idx)): Path<(String, String)>,
-    RawQuery(query_str): RawQuery,
+    State(state): State<AppState>, headers: HeaderMap,
+    Path((info_hash, requested_idx)): Path<(String, String)>, RawQuery(query_str): RawQuery,
 ) -> Response {
     let request_start = Instant::now();
     let info_hash = info_hash.to_lowercase();

@@ -169,18 +169,14 @@ pub type EngineFS = BackendEngineFS<LibtorrentBackend>;
 
 impl<B: TorrentBackend + 'static> BackendEngineFS<B> {
     pub fn new_with_backend(
-        backend: B,
-        restored_handles: HashMap<String, B::Handle>,
-        cache_dir: std::path::PathBuf,
+        backend: B, restored_handles: HashMap<String, B::Handle>, cache_dir: std::path::PathBuf,
         download_dir: std::path::PathBuf,
     ) -> Self {
         Self::new_with_backend_and_storage(backend, restored_handles, cache_dir, download_dir, None)
     }
 
     pub fn new_with_backend_and_storage(
-        backend: B,
-        restored_handles: HashMap<String, B::Handle>,
-        cache_dir: std::path::PathBuf,
+        backend: B, restored_handles: HashMap<String, B::Handle>, cache_dir: std::path::PathBuf,
         download_dir: std::path::PathBuf,
         tracker_storage: Option<Arc<dyn crate::trackers::TrackerStorage>>,
     ) -> Self {
@@ -534,9 +530,7 @@ impl<B: TorrentBackend + 'static> BackendEngineFS<B> {
     }
 
     pub async fn add_torrent(
-        &self,
-        source: TorrentSource,
-        extra_trackers: Option<Vec<String>>,
+        &self, source: TorrentSource, extra_trackers: Option<Vec<String>>,
     ) -> Result<Arc<Engine<B::Handle>>> {
         // Start with default trackers
         let mut trackers: Vec<String> = DEFAULT_TRACKERS.iter().map(|s| s.to_string()).collect();
@@ -736,11 +730,7 @@ impl<B: TorrentBackend + 'static> BackendEngineFS<B> {
     }
 
     async fn activate_file(
-        &self,
-        info_hash: &str,
-        file_idx: usize,
-        keep_file_downloading: bool,
-        source: &'static str,
+        &self, info_hash: &str, file_idx: usize, keep_file_downloading: bool, source: &'static str,
     ) {
         let mut is_multifile = false;
         if let Some(engine) = self.get_engine(info_hash).await {
@@ -796,10 +786,7 @@ impl<B: TorrentBackend + 'static> BackendEngineFS<B> {
     }
 
     pub async fn activate_multifile_file_for_playback(
-        &self,
-        info_hash: &str,
-        file_idx: usize,
-        hot_file: Option<HotFilePriorityPlan>,
+        &self, info_hash: &str, file_idx: usize, hot_file: Option<HotFilePriorityPlan>,
         source: &'static str,
     ) {
         let info_hash = info_hash.to_lowercase();
@@ -815,10 +802,7 @@ impl<B: TorrentBackend + 'static> BackendEngineFS<B> {
     }
 
     async fn activate_multifile_file(
-        &self,
-        info_hash: &str,
-        file_idx: usize,
-        hot_file: Option<HotFilePriorityPlan>,
+        &self, info_hash: &str, file_idx: usize, hot_file: Option<HotFilePriorityPlan>,
         source: &'static str,
     ) {
         let Some(engine) = self.get_engine(info_hash).await else {
@@ -887,11 +871,8 @@ impl<B: TorrentBackend + 'static> BackendEngineFS<B> {
     }
 
     async fn reconcile_multifile_engine(
-        engine: Arc<Engine<B::Handle>>,
-        active_file: Option<usize>,
-        hot_file: Option<HotFilePriorityPlan>,
-        generation: u64,
-        reason: &'static str,
+        engine: Arc<Engine<B::Handle>>, active_file: Option<usize>,
+        hot_file: Option<HotFilePriorityPlan>, generation: u64, reason: &'static str,
     ) -> bool {
         if engine.handle.manages_playback_lifecycle() {
             return true;
@@ -925,10 +906,7 @@ impl<B: TorrentBackend + 'static> BackendEngineFS<B> {
     /// Refresh an HLS playback lease. HLS segment reads are short-lived, so this
     /// keeps the requested file wanted while the player is buffered.
     pub async fn refresh_hls_playback(
-        &self,
-        info_hash: &str,
-        file_idx: usize,
-        source: &'static str,
+        &self, info_hash: &str, file_idx: usize, source: &'static str,
     ) {
         let info_hash = info_hash.to_lowercase();
         let now = now_secs();
@@ -982,10 +960,7 @@ impl<B: TorrentBackend + 'static> BackendEngineFS<B> {
     /// Refresh a lease only if playback is already known to be active. This is
     /// used by stats.json so a progress poll cannot create a new download.
     pub async fn refresh_existing_hls_playback(
-        &self,
-        info_hash: &str,
-        file_idx: usize,
-        source: &'static str,
+        &self, info_hash: &str, file_idx: usize, source: &'static str,
     ) -> bool {
         let info_hash = info_hash.to_lowercase();
         let now = now_secs();
@@ -1156,9 +1131,7 @@ impl<B: TorrentBackend + 'static> BackendEngineFS<B> {
     }
 
     fn schedule_torrent_pause_after(
-        &self,
-        info_hash: String,
-        delay: Duration,
+        &self, info_hash: String, delay: Duration,
     ) -> tokio::task::JoinHandle<()> {
         let engines = self.engines.clone();
         let active_streams = self.active_streams.clone();
@@ -1256,10 +1229,7 @@ impl<B: TorrentBackend + 'static> BackendEngineFS<B> {
     }
 
     async fn schedule_file_cleanup_after(
-        &self,
-        info_hash: String,
-        file_idx: usize,
-        delay: Duration,
+        &self, info_hash: String, file_idx: usize, delay: Duration,
     ) -> Option<tokio::task::JoinHandle<()>> {
         if self
             .get_engine(&info_hash)
@@ -1417,8 +1387,7 @@ impl<B: TorrentBackend + 'static> BackendEngineFS<B> {
 #[cfg(all(feature = "librqbit", not(feature = "libtorrent")))]
 impl BackendEngineFS<LibrqbitBackend> {
     pub async fn new(
-        root_dir: std::path::PathBuf,
-        _cache_config: EngineCacheConfig,
+        root_dir: std::path::PathBuf, _cache_config: EngineCacheConfig,
     ) -> Result<Self> {
         let download_dir = root_dir.join("rqbit-downloads");
         let (backend, restored) = LibrqbitBackend::new(download_dir.clone()).await?;
@@ -1434,15 +1403,13 @@ impl BackendEngineFS<LibrqbitBackend> {
 #[cfg(feature = "libtorrent")]
 impl BackendEngineFS<LibtorrentBackend> {
     pub async fn new(
-        root_dir: std::path::PathBuf,
-        config: crate::backend::BackendConfig,
+        root_dir: std::path::PathBuf, config: crate::backend::BackendConfig,
     ) -> Result<Self> {
         Self::new_with_storage(root_dir, config, None).await
     }
 
     pub async fn new_with_storage(
-        root_dir: std::path::PathBuf,
-        config: crate::backend::BackendConfig,
+        root_dir: std::path::PathBuf, config: crate::backend::BackendConfig,
         tracker_storage: Option<Arc<dyn crate::trackers::TrackerStorage>>,
     ) -> Result<Self> {
         let download_dir = root_dir.join("libtorrent-downloads");
@@ -1468,8 +1435,7 @@ impl BackendEngineFS<LibtorrentBackend> {
     }
 
     pub async fn new_disk_backed(
-        root_dir: std::path::PathBuf,
-        config: crate::backend::BackendConfig,
+        root_dir: std::path::PathBuf, config: crate::backend::BackendConfig,
         tracker_storage: Option<Arc<dyn crate::trackers::TrackerStorage>>,
     ) -> Result<Self> {
         let download_dir = root_dir.join("torrent-cache");
@@ -1493,8 +1459,7 @@ impl BackendEngineFS<LibtorrentBackend> {
 
     /// Update session settings dynamically (called when user changes torrent settings)
     pub async fn update_torrent_settings(
-        &self,
-        profile: &crate::backend::TorrentSpeedProfile,
+        &self, profile: &crate::backend::TorrentSpeedProfile,
         privacy: &crate::backend::TorrentPrivacyConfig,
     ) {
         self.backend.update_session_settings(profile, privacy).await;
@@ -1614,9 +1579,7 @@ mod tests {
         type Handle = FakeHandle;
 
         async fn add_torrent(
-            &self,
-            _source: TorrentSource,
-            _trackers: Vec<String>,
+            &self, _source: TorrentSource, _trackers: Vec<String>,
         ) -> Result<Self::Handle> {
             Ok(self.handle.clone())
         }
@@ -1730,11 +1693,7 @@ mod tests {
         }
 
         async fn get_file_reader(
-            &self,
-            _file_idx: usize,
-            _start_offset: u64,
-            _priority: u8,
-            _bitrate: Option<u64>,
+            &self, _file_idx: usize, _start_offset: u64, _priority: u8, _bitrate: Option<u64>,
             _intent: crate::backend::priorities::PlaybackIntent,
         ) -> Result<Box<dyn FileStreamTrait>> {
             anyhow::bail!("not implemented")
@@ -1765,10 +1724,7 @@ mod tests {
         }
 
         async fn wait_for_piece_ready(
-            &self,
-            _file_idx: usize,
-            _offset: u64,
-            _timeout: Duration,
+            &self, _file_idx: usize, _offset: u64, _timeout: Duration,
             _intent: crate::backend::priorities::PlaybackIntent,
         ) -> Result<PieceReadiness> {
             Ok(PieceReadiness {

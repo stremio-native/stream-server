@@ -39,8 +39,7 @@ pub fn router() -> Router<AppState> {
 }
 
 pub async fn youtube_handler(
-    State(state): State<AppState>,
-    Path(id): Path<String>,
+    State(state): State<AppState>, Path(id): Path<String>,
 ) -> impl IntoResponse {
     let (video_id, as_json) = match id.strip_suffix(".json") {
         Some(stripped) => (stripped.to_owned(), true),

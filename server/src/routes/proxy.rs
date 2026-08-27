@@ -18,11 +18,8 @@ pub fn router() -> Router<AppState> {
 }
 
 pub async fn proxy_handler(
-    Path(rest): Path<String>,
-    axum::extract::RawQuery(raw_query): axum::extract::RawQuery,
-    Query(params): Query<HashMap<String, String>>,
-    headers: HeaderMap,
-    method: Method,
+    Path(rest): Path<String>, axum::extract::RawQuery(raw_query): axum::extract::RawQuery,
+    Query(params): Query<HashMap<String, String>>, headers: HeaderMap, method: Method,
 ) -> impl IntoResponse {
     // Porting the logic from express_805.js
     // Format 1: ?d=URL (standard)

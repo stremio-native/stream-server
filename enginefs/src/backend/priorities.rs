@@ -156,9 +156,7 @@ pub fn disk_backed_forward_window_pieces_for(intent: PlaybackIntent, piece_lengt
 }
 
 pub fn playback_deadline_step_ms(
-    piece_length: u64,
-    bitrate_bytes_per_sec: Option<u64>,
-    download_rate_bytes_per_sec: u64,
+    piece_length: u64, bitrate_bytes_per_sec: Option<u64>, download_rate_bytes_per_sec: u64,
 ) -> i32 {
     let bitrate = bitrate_bytes_per_sec.filter(|rate| *rate > 0);
     let download_rate = (download_rate_bytes_per_sec > 0).then_some(download_rate_bytes_per_sec);
@@ -505,10 +503,7 @@ fn dynamic_hot_window(ctx: &PriorityContext, bitrate_ratio: Option<f64>) -> i32 
 }
 
 fn assignment_for(
-    ctx: &PriorityContext,
-    distance: i32,
-    immediate_pieces: i32,
-    hot_pieces: i32,
+    ctx: &PriorityContext, distance: i32, immediate_pieces: i32, hot_pieces: i32,
 ) -> (PriorityBand, i32, i32) {
     let deadline_step = playback_deadline_step_ms(
         ctx.piece_length,
@@ -535,13 +530,8 @@ fn assignment_for(
 
 /// Backward-compatible wrapper used by older callers and tests.
 pub fn calculate_priorities(
-    current_piece: i32,
-    total_pieces: i32,
-    piece_length: u64,
-    config: &EngineCacheConfig,
-    priority: u8,
-    download_speed: u64,
-    bitrate: Option<u64>,
+    current_piece: i32, total_pieces: i32, piece_length: u64, config: &EngineCacheConfig,
+    priority: u8, download_speed: u64, bitrate: Option<u64>,
 ) -> Vec<PriorityItem> {
     let intent = if priority >= 250 {
         PlaybackIntent::InternalProbe

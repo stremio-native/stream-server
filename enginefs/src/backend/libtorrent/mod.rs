@@ -61,15 +61,13 @@ impl LibtorrentBackend {
     }
 
     pub fn new_memory_only(
-        save_path: PathBuf,
-        config: crate::backend::BackendConfig,
+        save_path: PathBuf, config: crate::backend::BackendConfig,
     ) -> Result<Self> {
         Self::new_with_storage_mode(save_path, config, LibtorrentStorageMode::MemoryOnly)
     }
 
     pub fn new_disk_backed(
-        save_path: PathBuf,
-        config: crate::backend::BackendConfig,
+        save_path: PathBuf, config: crate::backend::BackendConfig,
     ) -> Result<Self> {
         Self::new_with_storage_mode(save_path, config, LibtorrentStorageMode::DiskBacked)
     }
@@ -130,8 +128,7 @@ impl LibtorrentBackend {
     }
 
     fn new_with_storage_mode(
-        save_path: PathBuf,
-        config: crate::backend::BackendConfig,
+        save_path: PathBuf, config: crate::backend::BackendConfig,
         storage_mode: LibtorrentStorageMode,
     ) -> Result<Self> {
         let settings = Self::default_session_settings(&config);
@@ -214,9 +211,7 @@ impl LibtorrentBackend {
 
     /// Create with custom settings
     pub fn with_settings(
-        save_path: PathBuf,
-        settings: SessionSettings,
-        config: crate::backend::BackendConfig,
+        save_path: PathBuf, settings: SessionSettings, config: crate::backend::BackendConfig,
     ) -> Result<Self> {
         Self::with_settings_and_storage_mode(
             save_path,
@@ -227,9 +222,7 @@ impl LibtorrentBackend {
     }
 
     fn with_settings_and_storage_mode(
-        save_path: PathBuf,
-        settings: SessionSettings,
-        config: crate::backend::BackendConfig,
+        save_path: PathBuf, settings: SessionSettings, config: crate::backend::BackendConfig,
         storage_mode: LibtorrentStorageMode,
     ) -> Result<Self> {
         let session = match storage_mode {
@@ -293,8 +286,7 @@ impl LibtorrentBackend {
 
     /// Update session settings dynamically (called when user changes settings)
     pub async fn update_session_settings(
-        &self,
-        profile: &crate::backend::TorrentSpeedProfile,
+        &self, profile: &crate::backend::TorrentSpeedProfile,
         privacy: &crate::backend::TorrentPrivacyConfig,
     ) {
         let mut session = self.session.write().await;
@@ -601,9 +593,7 @@ impl TorrentBackend for LibtorrentBackend {
     type Handle = LibtorrentTorrentHandle;
 
     async fn add_torrent(
-        &self,
-        source: TorrentSource,
-        trackers: Vec<String>,
+        &self, source: TorrentSource, trackers: Vec<String>,
     ) -> Result<Self::Handle> {
         let mut session = self.session.write().await;
         let save_path = self.save_path.to_string_lossy().to_string();

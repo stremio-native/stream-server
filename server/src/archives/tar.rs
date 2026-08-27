@@ -88,9 +88,7 @@ impl AsyncRawFileSlice {
 
 impl AsyncRead for AsyncRawFileSlice {
     fn poll_read(
-        mut self: Pin<&mut Self>,
-        cx: &mut Context<'_>,
-        buf: &mut tokio::io::ReadBuf<'_>,
+        mut self: Pin<&mut Self>, cx: &mut Context<'_>, buf: &mut tokio::io::ReadBuf<'_>,
     ) -> Poll<std::io::Result<()>> {
         if self.pos >= self.size {
             return Poll::Ready(Ok(()));

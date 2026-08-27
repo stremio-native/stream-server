@@ -14,9 +14,7 @@ pub struct FileHandle<H: TorrentHandle> {
 
 impl<H: TorrentHandle> FileHandle<H> {
     pub fn new(
-        size: u64,
-        name: String,
-        stream: Box<dyn FileStreamTrait>,
+        size: u64, name: String, stream: Box<dyn FileStreamTrait>,
         engine: Arc<crate::engine::Engine<H>>,
     ) -> Self {
         Self {
@@ -30,9 +28,7 @@ impl<H: TorrentHandle> FileHandle<H> {
 
 impl<H: TorrentHandle> AsyncRead for FileHandle<H> {
     fn poll_read(
-        mut self: Pin<&mut Self>,
-        cx: &mut Context<'_>,
-        buf: &mut tokio::io::ReadBuf<'_>,
+        mut self: Pin<&mut Self>, cx: &mut Context<'_>, buf: &mut tokio::io::ReadBuf<'_>,
     ) -> Poll<std::io::Result<()>> {
         Pin::new(&mut self.stream).poll_read(cx, buf)
     }

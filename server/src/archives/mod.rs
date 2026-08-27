@@ -102,8 +102,7 @@ pub async fn get_archive_reader(path: &Path) -> Result<Box<dyn ArchiveReader>> {
 
 /// Create an archive reader with custom cache configuration
 pub async fn get_archive_reader_with_config(
-    path: &Path,
-    cache_config: CacheConfig,
+    path: &Path, cache_config: CacheConfig,
 ) -> Result<Box<dyn ArchiveReader>> {
     let path_str = path.to_string_lossy().to_lowercase();
 
@@ -155,8 +154,7 @@ pub async fn get_archive_reader_with_config(
 }
 
 pub fn get_archive_reader_from_stream(
-    reader: Box<dyn AsyncSeekableReader>,
-    extension: &str,
+    reader: Box<dyn AsyncSeekableReader>, extension: &str,
 ) -> Result<Box<dyn ArchiveReader>> {
     let ext = extension.to_lowercase();
     if ext == "zip" {

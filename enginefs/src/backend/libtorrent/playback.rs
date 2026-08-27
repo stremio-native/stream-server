@@ -119,9 +119,7 @@ struct ActivePriorityWindows {
 
 impl ActivePriorityWindows {
     fn replace(
-        &mut self,
-        stream_id: usize,
-        assignments: Vec<LibtorrentPiecePriority>,
+        &mut self, stream_id: usize, assignments: Vec<LibtorrentPiecePriority>,
     ) -> Vec<PiecePriorityChange> {
         let replacement = assignments
             .into_iter()
@@ -309,13 +307,8 @@ impl TorrentPlaybackState {
     }
 
     fn select(
-        &mut self,
-        file_idx: usize,
-        native_priority: i32,
-        direct_permit: bool,
-        hls_activity: bool,
-        network_required: bool,
-        foreground: bool,
+        &mut self, file_idx: usize, native_priority: i32, direct_permit: bool, hls_activity: bool,
+        network_required: bool, foreground: bool,
     ) -> Selection {
         let subordinate = direct_permit
             && !foreground
@@ -469,10 +462,8 @@ pub(crate) struct LibtorrentPlaybackCoordinator {
 
 impl LibtorrentPlaybackCoordinator {
     pub(crate) fn new(
-        session: Arc<RwLock<libtorrent_sys::LibtorrentSession>>,
-        alerts: Arc<LibtorrentAlertHub>,
-        storage_mode: LibtorrentStorageMode,
-        config: crate::backend::BackendConfig,
+        session: Arc<RwLock<libtorrent_sys::LibtorrentSession>>, alerts: Arc<LibtorrentAlertHub>,
+        storage_mode: LibtorrentStorageMode, config: crate::backend::BackendConfig,
     ) -> Arc<Self> {
         let (command_tx, command_rx) = mpsc::unbounded_channel();
         let coordinator = Arc::new(Self {
@@ -489,8 +480,7 @@ impl LibtorrentPlaybackCoordinator {
     }
 
     fn spawn_worker(
-        coordinator: &Arc<Self>,
-        mut command_rx: mpsc::UnboundedReceiver<PlaybackCommand>,
+        coordinator: &Arc<Self>, mut command_rx: mpsc::UnboundedReceiver<PlaybackCommand>,
     ) {
         let coordinator = Arc::downgrade(coordinator);
         tokio::spawn(async move {
@@ -564,8 +554,7 @@ impl LibtorrentPlaybackCoordinator {
     }
 
     pub(crate) async fn metadata_layout(
-        self: &Arc<Self>,
-        info_hash: &str,
+        self: &Arc<Self>, info_hash: &str,
     ) -> Result<Arc<TorrentLayout>> {
         let info_hash = info_hash.to_lowercase();
         let entry = self.entry(&info_hash).await;
@@ -637,8 +626,7 @@ impl LibtorrentPlaybackCoordinator {
     }
 
     async fn acquire_metadata(
-        self: &Arc<Self>,
-        info_hash: &str,
+        self: &Arc<Self>, info_hash: &str,
     ) -> Result<LibtorrentMetadataPermit> {
         let entry = self.entry(info_hash).await;
         let _operation = entry.operation.lock().await;
@@ -692,9 +680,7 @@ impl LibtorrentPlaybackCoordinator {
     }
 
     pub(crate) async fn start_playback(
-        self: &Arc<Self>,
-        handle: &LibtorrentTorrentHandle,
-        start: LibtorrentPlaybackStart,
+        self: &Arc<Self>, handle: &LibtorrentTorrentHandle, start: LibtorrentPlaybackStart,
     ) -> Result<LibtorrentPlaybackPermit> {
         let info_hash = handle.info_hash.to_lowercase();
         let layout = self.metadata_layout(&info_hash).await?;
@@ -770,10 +756,7 @@ impl LibtorrentPlaybackCoordinator {
     }
 
     pub(crate) async fn refresh_hls(
-        self: &Arc<Self>,
-        handle: &LibtorrentTorrentHandle,
-        file_idx: usize,
-        source: &'static str,
+        self: &Arc<Self>, handle: &LibtorrentTorrentHandle, file_idx: usize, source: &'static str,
     ) -> Result<u64> {
         let info_hash = handle.info_hash.to_lowercase();
         let layout = self.metadata_layout(&info_hash).await?;
@@ -823,10 +806,7 @@ impl LibtorrentPlaybackCoordinator {
     }
 
     pub(crate) async fn end_hls(
-        self: &Arc<Self>,
-        info_hash: &str,
-        file_idx: usize,
-        reason: &'static str,
+        self: &Arc<Self>, info_hash: &str, file_idx: usize, reason: &'static str,
     ) -> Result<()> {
         let info_hash = info_hash.to_lowercase();
         let entry = self.entry(&info_hash).await;
@@ -859,9 +839,7 @@ impl LibtorrentPlaybackCoordinator {
     }
 
     pub(crate) async fn is_file_complete(
-        self: &Arc<Self>,
-        info_hash: &str,
-        file_idx: usize,
+        self: &Arc<Self>, info_hash: &str, file_idx: usize,
     ) -> bool {
         let Ok(layout) = self.metadata_layout(info_hash).await else {
             return false;
@@ -875,10 +853,7 @@ impl LibtorrentPlaybackCoordinator {
     }
 
     async fn file_is_complete_with_layout(
-        &self,
-        info_hash: &str,
-        layout: &TorrentLayout,
-        file_idx: usize,
+        &self, info_hash: &str, layout: &TorrentLayout, file_idx: usize,
     ) -> Result<bool> {
         if let Some(complete) = layout.completion.read().get(file_idx).copied().flatten() {
             return Ok(complete);
@@ -901,12 +876,8 @@ impl LibtorrentPlaybackCoordinator {
     }
 
     async fn activate_selection(
-        self: &Arc<Self>,
-        info_hash: &str,
-        entry: &Arc<TorrentPlaybackEntry>,
-        layout: &TorrentLayout,
-        start: &LibtorrentPlaybackStart,
-        selection: &Selection,
+        self: &Arc<Self>, info_hash: &str, entry: &Arc<TorrentPlaybackEntry>,
+        layout: &TorrentLayout, start: &LibtorrentPlaybackStart, selection: &Selection,
         complete: bool,
     ) -> Result<()> {
         let activation_started = Instant::now();
@@ -1101,10 +1072,7 @@ impl LibtorrentPlaybackCoordinator {
     }
 
     async fn selection_is_current(
-        &self,
-        entry: &TorrentPlaybackEntry,
-        file_idx: usize,
-        generation: u64,
+        &self, entry: &TorrentPlaybackEntry, file_idx: usize, generation: u64,
     ) -> bool {
         let state = entry.state.lock().await;
         state.generation == generation && state.selected_file == Some(file_idx)
@@ -1197,12 +1165,8 @@ impl LibtorrentPlaybackCoordinator {
     }
 
     async fn apply_hot_window(
-        &self,
-        info_hash: &str,
-        entry: &TorrentPlaybackEntry,
-        layout: &TorrentLayout,
-        start: &LibtorrentPlaybackStart,
-        generation: u64,
+        &self, info_hash: &str, entry: &TorrentPlaybackEntry, layout: &TorrentLayout,
+        start: &LibtorrentPlaybackStart, generation: u64,
     ) -> Result<i32> {
         let file = layout
             .files
@@ -1290,13 +1254,8 @@ impl LibtorrentPlaybackCoordinator {
     }
 
     async fn replace_priority_window_locked(
-        &self,
-        info_hash: &str,
-        entry: &TorrentPlaybackEntry,
-        file_idx: usize,
-        generation: u64,
-        stream_id: usize,
-        assignments: Vec<LibtorrentPiecePriority>,
+        &self, info_hash: &str, entry: &TorrentPlaybackEntry, file_idx: usize, generation: u64,
+        stream_id: usize, assignments: Vec<LibtorrentPiecePriority>,
     ) -> Result<bool> {
         let (baseline_priority, changes) = {
             let mut state = entry.state.lock().await;
@@ -1313,10 +1272,7 @@ impl LibtorrentPlaybackCoordinator {
     }
 
     async fn apply_piece_priority_changes(
-        &self,
-        info_hash: &str,
-        baseline_priority: i32,
-        changes: &[PiecePriorityChange],
+        &self, info_hash: &str, baseline_priority: i32, changes: &[PiecePriorityChange],
     ) -> Result<()> {
         if changes.is_empty() {
             return Ok(());
@@ -1355,11 +1311,7 @@ impl LibtorrentPlaybackCoordinator {
     }
 
     fn schedule_emergency_reannounce(
-        self: &Arc<Self>,
-        info_hash: String,
-        file_idx: usize,
-        piece: i32,
-        generation: u64,
+        self: &Arc<Self>, info_hash: String, file_idx: usize, piece: i32, generation: u64,
         cancellation: CancellationToken,
     ) {
         let coordinator = Arc::downgrade(self);
@@ -1699,10 +1651,7 @@ impl LibtorrentPlaybackCoordinator {
     }
 
     async fn perform_pause(
-        &self,
-        info_hash: &str,
-        entry: &TorrentPlaybackEntry,
-        generation: u64,
+        &self, info_hash: &str, entry: &TorrentPlaybackEntry, generation: u64,
         clear_selection: bool,
     ) -> Result<()> {
         if self.seeding_enabled.load(Ordering::Relaxed) {
@@ -1785,9 +1734,7 @@ impl LibtorrentPlaybackCoordinator {
     }
 
     async fn wait_for_pause_confirmation(
-        &self,
-        info_hash: &str,
-        receiver: &mut broadcast::Receiver<libtorrent_sys::AlertInfo>,
+        &self, info_hash: &str, receiver: &mut broadcast::Receiver<libtorrent_sys::AlertInfo>,
     ) -> Result<()> {
         let paused_alert_type = libtorrent_sys::get_torrent_paused_alert_type();
         let file_error_alert_type = libtorrent_sys::get_file_error_alert_type();
@@ -1919,9 +1866,7 @@ mod tests {
     use super::*;
 
     fn piece_priority(
-        piece: i32,
-        priority: i32,
-        deadline_ms: Option<i32>,
+        piece: i32, priority: i32, deadline_ms: Option<i32>,
     ) -> LibtorrentPiecePriority {
         LibtorrentPiecePriority {
             piece,

@@ -37,8 +37,7 @@ async fn handle_catalog(state: State<AppState>, path: Path<(String, String)>) ->
 }
 
 async fn handle_catalog_extra(
-    state: State<AppState>,
-    Path((type_, id, extra_ext)): Path<(String, String, String)>,
+    state: State<AppState>, Path((type_, id, extra_ext)): Path<(String, String, String)>,
 ) -> Json<Value> {
     let extra = extra_ext
         .strip_suffix(".json")
@@ -48,10 +47,7 @@ async fn handle_catalog_extra(
 }
 
 fn _handle_catalog(
-    State(state): State<AppState>,
-    type_: String,
-    _id: String,
-    _extra: Option<String>,
+    State(state): State<AppState>, type_: String, _id: String, _extra: Option<String>,
 ) -> Json<Value> {
     // Simple catalog: Return everything matching the type
     let items = state.local_index.items.read().unwrap();
@@ -81,8 +77,7 @@ fn _handle_catalog(
 }
 
 async fn handle_meta(
-    State(state): State<AppState>,
-    Path((type_, id_ext)): Path<(String, String)>,
+    State(state): State<AppState>, Path((type_, id_ext)): Path<(String, String)>,
 ) -> Json<Value> {
     let id = id_ext.strip_suffix(".json").unwrap_or(&id_ext).to_string();
 
@@ -150,8 +145,7 @@ async fn handle_meta(
 }
 
 async fn handle_stream(
-    State(state): State<AppState>,
-    Path((_type, id_ext)): Path<(String, String)>,
+    State(state): State<AppState>, Path((_type, id_ext)): Path<(String, String)>,
 ) -> Json<Value> {
     let id = id_ext.strip_suffix(".json").unwrap_or(&id_ext);
 

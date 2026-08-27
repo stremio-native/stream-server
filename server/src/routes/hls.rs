@@ -35,9 +35,7 @@ fn hls_stream_url(base_url: &str, info_hash: &str, file_idx: usize) -> String {
 }
 
 fn stremio_probe_json(
-    info_hash: &str,
-    file_idx: usize,
-    probe: &enginefs::hls::ProbeResult,
+    info_hash: &str, file_idx: usize, probe: &enginefs::hls::ProbeResult,
 ) -> serde_json::Value {
     serde_json::json!({
         "infoHash": info_hash,
@@ -67,8 +65,7 @@ fn stremio_probe_json(
 /// Probe endpoint using mediaURL query parameter (for Stremio compatibility)
 /// GET /hlsv2/probe?mediaURL=http://127.0.0.1:11470/{infoHash}/{fileIdx}?
 pub async fn probe_by_url(
-    State(state): State<AppState>,
-    Query(params): Query<ProbeQuery>,
+    State(state): State<AppState>, Query(params): Query<ProbeQuery>,
 ) -> Response {
     let start = std::time::Instant::now();
     let Some(media_url) = params.media_url.or(params.url) else {
@@ -131,9 +128,7 @@ pub struct HlsQuery {
 /// Master playlist endpoint using mediaURL query parameter (for Stremio compatibility)
 /// GET /hlsv2/{hash}/master.m3u8?mediaURL=http://127.0.0.1:11470/{infoHash}/{fileIdx}?
 pub async fn master_playlist_by_url(
-    State(state): State<AppState>,
-    Path(_hash): Path<String>,
-    _headers: axum::http::HeaderMap,
+    State(state): State<AppState>, Path(_hash): Path<String>, _headers: axum::http::HeaderMap,
     axum::extract::Query(params): axum::extract::Query<HlsQuery>,
     axum::extract::RawQuery(raw_query): axum::extract::RawQuery,
 ) -> Response {
@@ -205,10 +200,8 @@ pub async fn master_playlist_by_url(
 }
 
 pub async fn get_master_playlist(
-    State(state): State<AppState>,
-    Path((info_hash, file_idx)): Path<(String, usize)>,
-    _headers: axum::http::HeaderMap,
-    axum::extract::RawQuery(raw_query): axum::extract::RawQuery,
+    State(state): State<AppState>, Path((info_hash, file_idx)): Path<(String, usize)>,
+    _headers: axum::http::HeaderMap, axum::extract::RawQuery(raw_query): axum::extract::RawQuery,
 ) -> Response {
     let request_start = std::time::Instant::now();
     let engine = match state.stream_engine().get_or_add_engine(&info_hash).await {
@@ -275,8 +268,7 @@ pub async fn get_master_playlist(
 // Dispatcher for stream playlist or segment to avoid route conflict
 // {file_idx} can be numeric (0, 1) or text (subtitle4, audio-1)
 pub async fn handle_hls_resource(
-    State(state): State<AppState>,
-    _headers: axum::http::HeaderMap,
+    State(state): State<AppState>, _headers: axum::http::HeaderMap,
     Path((info_hash, file_idx_str, resource)): Path<(String, String, String)>,
     axum::extract::RawQuery(raw_query): axum::extract::RawQuery,
 ) -> Response {
@@ -335,8 +327,7 @@ pub async fn handle_hls_resource(
 
 // Handler for fMP4 nested paths like /hlsv2/{infoHash}/{fileIdx}/video0/init.mp4
 pub async fn handle_hls_fmp4_segment(
-    State(state): State<AppState>,
-    _headers: axum::http::HeaderMap,
+    State(state): State<AppState>, _headers: axum::http::HeaderMap,
     Path((info_hash, file_idx_str, track, segment)): Path<(String, String, String, String)>,
     axum::extract::RawQuery(raw_query): axum::extract::RawQuery,
 ) -> Response {
@@ -356,10 +347,7 @@ pub async fn handle_hls_fmp4_segment(
 }
 
 async fn get_stream_playlist(
-    State(state): State<AppState>,
-    info_hash: String,
-    file_idx: usize,
-    playlist_name: String,
+    State(state): State<AppState>, info_hash: String, file_idx: usize, playlist_name: String,
     raw_query: Option<String>,
 ) -> Response {
     let engine = match state.stream_engine().get_or_add_engine(&info_hash).await {
@@ -433,12 +421,8 @@ async fn get_stream_playlist(
 }
 
 async fn get_segment(
-    State(state): State<AppState>,
-    _headers: axum::http::HeaderMap,
-    info_hash: String,
-    file_idx: usize,
-    segment: String,
-    _raw_query: Option<String>,
+    State(state): State<AppState>, _headers: axum::http::HeaderMap, info_hash: String,
+    file_idx: usize, segment: String, _raw_query: Option<String>,
 ) -> Response {
     let request_start = std::time::Instant::now();
     let engine = match state.stream_engine().get_or_add_engine(&info_hash).await {
@@ -661,8 +645,7 @@ async fn get_segment(
 }
 
 pub async fn get_probe(
-    State(state): State<AppState>,
-    Path((info_hash, file_idx)): Path<(String, usize)>,
+    State(state): State<AppState>, Path((info_hash, file_idx)): Path<(String, usize)>,
 ) -> Response {
     let engine = match state.stream_engine().get_engine(&info_hash).await {
         Some(e) => e,
@@ -690,9 +673,7 @@ fn normalize_media_url(media_url: &str, base_url: &str) -> String {
 }
 
 async fn resolve_hls_file_idx<H: TorrentHandle>(
-    engine: &std::sync::Arc<enginefs::engine::Engine<H>>,
-    requested_idx: &str,
-    media_url: &str,
+    engine: &std::sync::Arc<enginefs::engine::Engine<H>>, requested_idx: &str, media_url: &str,
 ) -> Result<usize, String> {
     let filters = url::Url::parse(media_url)
         .ok()
@@ -806,10 +787,8 @@ pub async fn hls_burn(Path(id): Path<String>) -> Response {
 }
 
 pub async fn hls_v2_resource(
-    State(state): State<AppState>,
-    Path((id, resource)): Path<(String, String)>,
-    headers: axum::http::HeaderMap,
-    raw_query: axum::extract::RawQuery,
+    State(state): State<AppState>, Path((id, resource)): Path<(String, String)>,
+    headers: axum::http::HeaderMap, raw_query: axum::extract::RawQuery,
 ) -> Response {
     let Some((info_hash, file_idx)) = compat::parse_hls_id(&id) else {
         return compat::unsupported("hlsv2 arbitrary converter playlist");
@@ -849,13 +828,10 @@ pub async fn hls_v2_resource(
 }
 
 pub async fn legacy_hls_resource(
-    State(state): State<AppState>,
-    method: axum::http::Method,
-    uri: axum::http::Uri,
+    State(state): State<AppState>, method: axum::http::Method, uri: axum::http::Uri,
     axum::extract::ConnectInfo(peer): axum::extract::ConnectInfo<std::net::SocketAddr>,
     Path((first, second, resource)): Path<(String, String, String)>,
-    headers: axum::http::HeaderMap,
-    raw_query: axum::extract::RawQuery,
+    headers: axum::http::HeaderMap, raw_query: axum::extract::RawQuery,
 ) -> Response {
     let Some((info_hash, requested_idx)) = legacy_pair(&first, &second) else {
         crate::diagnostics::logging::log_unhandled(
@@ -943,9 +919,7 @@ pub async fn legacy_hls_resource(
 }
 
 pub async fn legacy_hls_segment(
-    State(state): State<AppState>,
-    method: axum::http::Method,
-    uri: axum::http::Uri,
+    State(state): State<AppState>, method: axum::http::Method, uri: axum::http::Uri,
     axum::extract::ConnectInfo(peer): axum::extract::ConnectInfo<std::net::SocketAddr>,
     headers: axum::http::HeaderMap,
     Path((first, second, variant, seg)): Path<(String, String, String, String)>,
@@ -995,9 +969,7 @@ fn legacy_pair(first: &str, second: &str) -> Option<(String, String)> {
 /// video file". Autoplay requests the next episode with `-1` because the
 /// client does not know the file index before the torrent metadata loads.
 async fn resolve_legacy_file_idx(
-    state: &AppState,
-    info_hash: &str,
-    requested_idx: &str,
+    state: &AppState, info_hash: &str, requested_idx: &str,
 ) -> Result<usize, Box<Response>> {
     if let Ok(idx) = requested_idx.parse::<usize>() {
         return Ok(idx);

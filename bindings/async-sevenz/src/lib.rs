@@ -142,8 +142,7 @@ impl SevenZ {
     }
 
     pub async fn get_entry_index(
-        &self,
-        name: &str,
+        &self, name: &str,
     ) -> Result<Option<u32>, Box<dyn std::error::Error + Send + Sync>> {
         let archive = self.archive;
         let archive_addr = archive as usize;
@@ -164,8 +163,7 @@ impl SevenZ {
 
     /// Get the uncompressed size of an entry by its index
     pub async fn get_entry_size(
-        &self,
-        index: u32,
+        &self, index: u32,
     ) -> Result<u64, Box<dyn std::error::Error + Send + Sync>> {
         let archive = self.archive;
         let archive_addr = archive as usize;
@@ -192,10 +190,7 @@ struct RustWriterContext {
 /// `ctx` must point to a live [`RustWriterContext`], `buf` must be readable for
 /// `size` bytes, and a non-null `processed` pointer must be writable.
 pub unsafe extern "C" fn rust_write_cb(
-    ctx: *mut c_void,
-    buf: *const c_void,
-    size: autocxx::c_uint,
-    processed: *mut autocxx::c_uint,
+    ctx: *mut c_void, buf: *const c_void, size: autocxx::c_uint, processed: *mut autocxx::c_uint,
 ) -> autocxx::c_int {
     unsafe {
         let ctx = &mut *(ctx as *mut RustWriterContext);
@@ -214,9 +209,7 @@ pub unsafe extern "C" fn rust_write_cb(
 
 impl SevenZ {
     pub async fn extract<W>(
-        &self,
-        index: u32,
-        writer: W,
+        &self, index: u32, writer: W,
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>>
     where
         W: std::io::Write + Send + 'static,

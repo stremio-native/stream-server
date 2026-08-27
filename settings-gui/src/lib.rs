@@ -646,11 +646,8 @@ pub fn run(connector: Arc<dyn ServerConnector>) -> Result<()> {
 }
 
 fn start_live_log_refresh(
-    handle: Handle,
-    connector: Arc<dyn ServerConnector>,
-    weak: Weak<AppWindow>,
-    log_state: Arc<Mutex<LogState>>,
-    in_flight: Arc<AtomicBool>,
+    handle: Handle, connector: Arc<dyn ServerConnector>, weak: Weak<AppWindow>,
+    log_state: Arc<Mutex<LogState>>, in_flight: Arc<AtomicBool>,
 ) {
     handle.clone().spawn(async move {
         let mut interval = tokio::time::interval(Duration::from_secs(1));
@@ -729,12 +726,8 @@ impl Drop for LogRefreshGuard {
 }
 
 fn refresh_logs(
-    handle: Handle,
-    connector: Arc<dyn ServerConnector>,
-    weak: Weak<AppWindow>,
-    log_state: Arc<Mutex<LogState>>,
-    in_flight: Arc<AtomicBool>,
-    mode: LogRefreshMode,
+    handle: Handle, connector: Arc<dyn ServerConnector>, weak: Weak<AppWindow>,
+    log_state: Arc<Mutex<LogState>>, in_flight: Arc<AtomicBool>, mode: LogRefreshMode,
 ) {
     if in_flight.swap(true, Ordering::AcqRel) {
         if mode == LogRefreshMode::Manual {
@@ -953,11 +946,7 @@ fn hash_content(s: &str) -> u64 {
 }
 
 fn flatten_json(
-    value: &Value,
-    depth: i32,
-    key: String,
-    expanded_nodes: &HashSet<i32>,
-    node_counter: &mut i32,
+    value: &Value, depth: i32, key: String, expanded_nodes: &HashSet<i32>, node_counter: &mut i32,
     output: &mut Vec<JsonTreeNode>,
 ) {
     let current_id = *node_counter;
@@ -1276,11 +1265,8 @@ fn entry_matches_query(entry: &LogEntryData, query: &str) -> bool {
 }
 
 fn refresh_changelog(
-    handle: Handle,
-    connector: Arc<dyn ServerConnector>,
-    weak: Weak<AppWindow>,
-    loaded: Arc<AtomicBool>,
-    force: bool,
+    handle: Handle, connector: Arc<dyn ServerConnector>, weak: Weak<AppWindow>,
+    loaded: Arc<AtomicBool>, force: bool,
 ) {
     if !force && loaded.load(Ordering::Acquire) {
         return;

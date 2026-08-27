@@ -47,11 +47,7 @@ impl TrayStats {
     }
 
     pub fn update(
-        &self,
-        download_speed: f64,
-        upload_speed: f64,
-        peers: u64,
-        active_torrents: usize,
+        &self, download_speed: f64, upload_speed: f64, peers: u64, active_torrents: usize,
     ) {
         self.download_speed_bits
             .store(download_speed.to_bits(), Ordering::Relaxed);

@@ -16,8 +16,7 @@ pub struct OpensubHashQuery {
 }
 
 pub async fn opensub_hash(
-    State(state): State<AppState>,
-    Query(query): Query<OpensubHashQuery>,
+    State(state): State<AppState>, Query(query): Query<OpensubHashQuery>,
 ) -> impl IntoResponse {
     let url = query.video_url.unwrap_or_default();
 
@@ -62,8 +61,7 @@ pub async fn opensub_hash(
 }
 
 pub async fn opensub_hash_path(
-    State(state): State<AppState>,
-    Path((info_hash, file_idx)): Path<(String, usize)>,
+    State(state): State<AppState>, Path((info_hash, file_idx)): Path<(String, usize)>,
 ) -> impl IntoResponse {
     let info_hash = info_hash.to_lowercase();
     if let Some(engine) = state.stream_engine().get_engine(&info_hash).await {
@@ -91,8 +89,7 @@ pub struct SubtitlesTracksQuery {
 }
 
 pub async fn subtitles_tracks(
-    State(state): State<AppState>,
-    Query(query): Query<SubtitlesTracksQuery>,
+    State(state): State<AppState>, Query(query): Query<SubtitlesTracksQuery>,
 ) -> impl IntoResponse {
     let url = query.subs_url.unwrap_or_default();
     let mut info_hash = None;
@@ -128,8 +125,7 @@ pub async fn subtitles_tracks(
 }
 
 pub async fn get_subtitles_vtt(
-    State(state): State<AppState>,
-    Path((info_hash, file_idx)): Path<(String, usize)>,
+    State(state): State<AppState>, Path((info_hash, file_idx)): Path<(String, usize)>,
 ) -> Response {
     if let Some(engine) = state.stream_engine().get_engine(&info_hash).await {
         // Check if this is an embedded subtitle track ID (>= 1000)
@@ -200,8 +196,7 @@ pub async fn proxy_subtitles_vtt(Query(query): Query<ProxySubtitlesQuery>) -> Re
 }
 
 pub async fn proxy_subtitles_ext(
-    Path(ext): Path<String>,
-    Query(query): Query<ProxySubtitlesQuery>,
+    Path(ext): Path<String>, Query(query): Query<ProxySubtitlesQuery>,
 ) -> Response {
     proxy_subtitles_response(&ext, query).await
 }

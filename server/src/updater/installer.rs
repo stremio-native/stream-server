@@ -31,8 +31,7 @@ pub struct ApplyAsset {
 }
 
 pub fn prepare_apply_plan(
-    staged: &StagedUpdate,
-    allow_stop_stremio: bool,
+    staged: &StagedUpdate, allow_stop_stremio: bool,
 ) -> Result<(PathBuf, PathBuf), UpdateError> {
     if !cfg!(windows) {
         return Err(UpdateError::unsupported(

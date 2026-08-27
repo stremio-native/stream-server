@@ -28,11 +28,7 @@ fn init_android_tls_verifier(_env: &mut Env, _context: JObject) -> jni::errors::
 /// The JNI environment and object handles must be valid for the duration of
 /// this call and must originate from the invoking JVM thread.
 pub unsafe extern "C" fn Java_com_stremio_mobile_server_JniStreamingServerController_startServerNative(
-    mut env: EnvUnowned,
-    _class: JClass,
-    context: JObject,
-    config_dir: JString,
-    cache_dir: JString,
+    mut env: EnvUnowned, _class: JClass, context: JObject, config_dir: JString, cache_dir: JString,
     port: jni::sys::jint,
 ) -> jstring {
     env.with_env(|env| -> jni::errors::Result<jstring> {
@@ -99,8 +95,7 @@ pub unsafe extern "C" fn Java_com_stremio_mobile_server_JniStreamingServerContro
 /// The JNI environment and class handle must originate from the invoking JVM
 /// thread.
 pub unsafe extern "C" fn Java_com_stremio_mobile_server_JniStreamingServerController_stopServerNative(
-    _env: EnvUnowned,
-    _class: JClass,
+    _env: EnvUnowned, _class: JClass,
 ) {
     let mut handle_lock = SERVER_HANDLE.lock().unwrap();
     if let Some(handle) = handle_lock.take() {
@@ -117,8 +112,7 @@ pub unsafe extern "C" fn Java_com_stremio_mobile_server_JniStreamingServerContro
 /// The JNI environment and class handle must be valid for the duration of this
 /// call and must originate from the invoking JVM thread.
 pub unsafe extern "C" fn Java_com_stremio_mobile_server_JniStreamingServerController_getServerUrlNative(
-    mut env: EnvUnowned,
-    _class: JClass,
+    mut env: EnvUnowned, _class: JClass,
 ) -> jstring {
     env.with_env(|env| -> jni::errors::Result<jstring> {
         let handle_lock = SERVER_HANDLE.lock().unwrap();

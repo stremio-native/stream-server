@@ -31,9 +31,7 @@ pub struct StagedUpdate {
 }
 
 pub async fn stage_update(
-    client: &reqwest::Client,
-    staging_root: PathBuf,
-    candidate: &UpdateCandidate,
+    client: &reqwest::Client, staging_root: PathBuf, candidate: &UpdateCandidate,
 ) -> Result<StagedUpdate, UpdateError> {
     let dir = staging_root.join(format!("v{}", candidate.version));
     if dir.exists() {
@@ -84,9 +82,7 @@ pub async fn stage_update(
 }
 
 async fn download_and_verify(
-    client: &reqwest::Client,
-    dir: &std::path::Path,
-    asset: &ReleaseAssetInfo,
+    client: &reqwest::Client, dir: &std::path::Path, asset: &ReleaseAssetInfo,
     checksums: &HashMap<String, String>,
 ) -> Result<PathBuf, UpdateError> {
     let dest = dir.join(&asset.name);

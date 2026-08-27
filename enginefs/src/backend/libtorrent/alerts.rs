@@ -95,13 +95,8 @@ impl LibtorrentAlertHub {
     }
 
     pub(crate) async fn read_piece(
-        &self,
-        mut handle: libtorrent_sys::LibtorrentHandle,
-        info_hash: &str,
-        piece: i32,
-        piece_priority: i32,
-        deadline_ms: i32,
-        timeout: std::time::Duration,
+        &self, mut handle: libtorrent_sys::LibtorrentHandle, info_hash: &str, piece: i32,
+        piece_priority: i32, deadline_ms: i32, timeout: std::time::Duration,
     ) -> std::io::Result<Arc<Vec<u8>>> {
         let key = (info_hash.to_lowercase(), piece);
         let (mut receiver, submit_native_request) = {

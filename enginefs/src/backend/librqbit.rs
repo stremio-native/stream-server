@@ -100,9 +100,7 @@ impl TorrentBackend for LibrqbitBackend {
     type Handle = LibrqbitHandle;
 
     async fn add_torrent(
-        &self,
-        source: TorrentSource,
-        trackers: Vec<String>,
+        &self, source: TorrentSource, trackers: Vec<String>,
     ) -> Result<Self::Handle> {
         let add_torrent = match source {
             TorrentSource::Url(url) => librqbit::AddTorrent::Url(url.into()),
@@ -266,11 +264,7 @@ impl TorrentHandle for LibrqbitHandle {
     }
 
     async fn get_file_reader(
-        &self,
-        file_idx: usize,
-        _start_offset: u64,
-        _priority: u8,
-        _bitrate: Option<u64>,
+        &self, file_idx: usize, _start_offset: u64, _priority: u8, _bitrate: Option<u64>,
         _intent: crate::backend::priorities::PlaybackIntent,
     ) -> Result<Box<dyn FileStreamTrait>> {
         let stream = self
@@ -315,10 +309,7 @@ impl TorrentHandle for LibrqbitHandle {
     }
 
     async fn wait_for_piece_ready(
-        &self,
-        _file_idx: usize,
-        _offset: u64,
-        _timeout: Duration,
+        &self, _file_idx: usize, _offset: u64, _timeout: Duration,
         _intent: crate::backend::priorities::PlaybackIntent,
     ) -> Result<PieceReadiness> {
         Ok(PieceReadiness {

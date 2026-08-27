@@ -62,9 +62,7 @@ pub fn router() -> Router<AppState> {
 }
 
 async fn create_session_auto(
-    State(state): State<AppState>,
-    method: axum::http::Method,
-    Query(query): Query<NzbCreateQuery>,
+    State(state): State<AppState>, method: axum::http::Method, Query(query): Query<NzbCreateQuery>,
     body: axum::body::Bytes,
 ) -> Response {
     let key = Uuid::new_v4().to_string();
@@ -72,11 +70,8 @@ async fn create_session_auto(
 }
 
 async fn create_session_with_key(
-    State(state): State<AppState>,
-    Path(key): Path<String>,
-    method: axum::http::Method,
-    Query(query): Query<NzbCreateQuery>,
-    body: axum::body::Bytes,
+    State(state): State<AppState>, Path(key): Path<String>, method: axum::http::Method,
+    Query(query): Query<NzbCreateQuery>, body: axum::body::Bytes,
 ) -> Response {
     create_session_internal(state, key, method, query, body).await
 }
@@ -115,10 +110,7 @@ fn parse_nzb_server_url(url_str: &str) -> Option<NzbServerConfig> {
 }
 
 async fn create_session_internal(
-    state: AppState,
-    key: String,
-    method: axum::http::Method,
-    query: NzbCreateQuery,
+    state: AppState, key: String, method: axum::http::Method, query: NzbCreateQuery,
     body: axum::body::Bytes,
 ) -> Response {
     let config = if let Some(lz) = query.lz {
@@ -251,8 +243,7 @@ async fn create_session_internal(
 }
 
 async fn stream_nzb_file(
-    State(state): State<AppState>,
-    Path((key, file)): Path<(String, String)>,
+    State(state): State<AppState>, Path((key, file)): Path<(String, String)>,
 ) -> Result<Response, StatusCode> {
     if let Some(session) = state.nzb_sessions.get(&key) {
         match session.stream_file(&file) {
@@ -291,8 +282,7 @@ struct NzbStreamQuery {
 }
 
 async fn stream_nzb_query(
-    State(state): State<AppState>,
-    Query(query): Query<NzbStreamQuery>,
+    State(state): State<AppState>, Query(query): Query<NzbStreamQuery>,
 ) -> Result<Response, StatusCode> {
     let session = state
         .nzb_sessions

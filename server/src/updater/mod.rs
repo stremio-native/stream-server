@@ -46,9 +46,7 @@ impl UpdateManager {
     }
 
     pub async fn check_for_updates(
-        &self,
-        settings: &ServerSettings,
-        force: bool,
+        &self, settings: &ServerSettings, force: bool,
     ) -> Result<UpdateStatus, UpdateError> {
         let _guard = self.operation.lock().await;
         let now = unix_now();
@@ -137,9 +135,7 @@ impl UpdateManager {
     }
 
     pub async fn install_update(
-        &self,
-        app_state: &AppState,
-        force: bool,
+        &self, app_state: &AppState, force: bool,
     ) -> Result<UpdateStatus, UpdateError> {
         let _guard = self.operation.lock().await;
         let blockers = idle::install_blockers(app_state).await;
@@ -216,8 +212,7 @@ impl UpdateManager {
     }
 
     pub fn spawn_background_checker(
-        self: Arc<Self>,
-        app_state: AppState,
+        self: Arc<Self>, app_state: AppState,
     ) -> tokio::task::JoinHandle<()> {
         crate::diagnostics::logging::spawn_logged("update-checker", async move {
             tokio::time::sleep(Duration::from_secs(30)).await;

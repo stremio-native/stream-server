@@ -27,9 +27,7 @@ pub trait TorrentBackend: Send + Sync {
     type Handle: TorrentHandle;
 
     async fn add_torrent(
-        &self,
-        source: TorrentSource,
-        trackers: Vec<String>,
+        &self, source: TorrentSource, trackers: Vec<String>,
     ) -> Result<Self::Handle>;
 
     async fn get_torrent(&self, info_hash: &str) -> Option<Self::Handle>;
@@ -102,11 +100,7 @@ pub trait TorrentHandle: Send + Sync + Clone {
         Ok(())
     }
     async fn get_file_reader(
-        &self,
-        file_idx: usize,
-        start_offset: u64,
-        priority: u8,
-        bitrate: Option<u64>,
+        &self, file_idx: usize, start_offset: u64, priority: u8, bitrate: Option<u64>,
         intent: priorities::PlaybackIntent,
     ) -> Result<Box<dyn FileStreamTrait>>;
     async fn get_files(&self) -> Vec<BackendFileInfo>;
@@ -124,11 +118,7 @@ pub trait TorrentHandle: Send + Sync + Clone {
     async fn clear_file_streaming(&self, file_idx: usize) -> Result<()>;
     /// Wait until the first piece needed for the requested offset is readable.
     async fn wait_for_piece_ready(
-        &self,
-        file_idx: usize,
-        offset: u64,
-        timeout: Duration,
-        intent: priorities::PlaybackIntent,
+        &self, file_idx: usize, offset: u64, timeout: Duration, intent: priorities::PlaybackIntent,
     ) -> Result<PieceReadiness>;
 }
 

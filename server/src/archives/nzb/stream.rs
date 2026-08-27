@@ -42,9 +42,7 @@ impl NzbFileStream {
 
 impl AsyncRead for NzbFileStream {
     fn poll_read(
-        mut self: Pin<&mut Self>,
-        cx: &mut Context<'_>,
-        buf: &mut ReadBuf<'_>,
+        mut self: Pin<&mut Self>, cx: &mut Context<'_>, buf: &mut ReadBuf<'_>,
     ) -> Poll<Result<()>> {
         loop {
             // 1. If we have buffered data, return it

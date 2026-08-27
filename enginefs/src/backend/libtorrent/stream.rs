@@ -110,8 +110,7 @@ impl LibtorrentFileStream {
     }
 
     fn replace_priority_window<'a>(
-        &self,
-        assignments: impl IntoIterator<Item = &'a PriorityAssignment>,
+        &self, assignments: impl IntoIterator<Item = &'a PriorityAssignment>,
     ) -> usize {
         let non_time_critical = self.playback_permit.is_subordinate()
             || matches!(
@@ -404,8 +403,7 @@ impl LibtorrentFileStream {
 
 impl tokio::io::AsyncRead for LibtorrentFileStream {
     fn poll_read(
-        mut self: std::pin::Pin<&mut Self>,
-        cx: &mut std::task::Context<'_>,
+        mut self: std::pin::Pin<&mut Self>, cx: &mut std::task::Context<'_>,
         buf: &mut tokio::io::ReadBuf<'_>,
     ) -> std::task::Poll<std::io::Result<()>> {
         if self.playback_permit.is_cancelled() {
@@ -741,8 +739,7 @@ impl Drop for LibtorrentFileStream {
 
 impl tokio::io::AsyncSeek for LibtorrentFileStream {
     fn start_seek(
-        mut self: std::pin::Pin<&mut Self>,
-        position: std::io::SeekFrom,
+        mut self: std::pin::Pin<&mut Self>, position: std::io::SeekFrom,
     ) -> std::io::Result<()> {
         // Calculate target position
         let new_pos = match position {
@@ -778,8 +775,7 @@ impl tokio::io::AsyncSeek for LibtorrentFileStream {
     }
 
     fn poll_complete(
-        mut self: std::pin::Pin<&mut Self>,
-        _cx: &mut std::task::Context<'_>,
+        mut self: std::pin::Pin<&mut Self>, _cx: &mut std::task::Context<'_>,
     ) -> std::task::Poll<std::io::Result<u64>> {
         // Memory-only mode: position is already set in start_seek
         let pos = self.current_pos;

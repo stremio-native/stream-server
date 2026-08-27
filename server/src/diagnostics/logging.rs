@@ -71,13 +71,8 @@ fn format_headers(headers: &axum::http::HeaderMap) -> String {
 /// own fields, and a dump of every header. Centralised so that every
 /// "we did not serve this" code path logs identically and greppably.
 pub fn log_unhandled(
-    reason: &str,
-    status: u16,
-    peer: Option<std::net::SocketAddr>,
-    method: &axum::http::Method,
-    uri: &axum::http::Uri,
-    version: Option<axum::http::Version>,
-    headers: &axum::http::HeaderMap,
+    reason: &str, status: u16, peer: Option<std::net::SocketAddr>, method: &axum::http::Method,
+    uri: &axum::http::Uri, version: Option<axum::http::Version>, headers: &axum::http::HeaderMap,
 ) {
     use axum::http::header;
     let header_value = |name: &header::HeaderName| -> String {
@@ -237,11 +232,7 @@ where
 }
 
 pub fn log_startup_context(
-    config_dir: &Path,
-    cache_dir: &Path,
-    log_dir: &Path,
-    human_log: &Path,
-    archive_log: &Path,
+    config_dir: &Path, cache_dir: &Path, log_dir: &Path, human_log: &Path, archive_log: &Path,
     json_log: &Path,
 ) {
     let exe_path = std::env::current_exe()

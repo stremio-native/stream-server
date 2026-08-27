@@ -64,9 +64,7 @@ impl<H: TorrentHandle> Engine<H> {
     }
 
     pub async fn get_probe_result(
-        &self,
-        file_idx: usize,
-        fallback_url: &str,
+        &self, file_idx: usize, fallback_url: &str,
     ) -> anyhow::Result<crate::hls::ProbeResult> {
         let cache = self.probe_cache.lock().await;
         if let Some(res) = cache.get(&file_idx) {
@@ -120,9 +118,7 @@ impl<H: TorrentHandle> Engine<H> {
     }
 
     async fn run_probe(
-        &self,
-        file_idx: usize,
-        fallback_url: &str,
+        &self, file_idx: usize, fallback_url: &str,
     ) -> anyhow::Result<crate::hls::ProbeResult> {
         let startup = Instant::now();
         tracing::debug!(
@@ -210,8 +206,7 @@ impl<H: TorrentHandle> Engine<H> {
     }
 
     pub async fn guess_file_index(
-        &self,
-        series_info: Option<&crate::engine::SeriesInfo>,
+        &self, series_info: Option<&crate::engine::SeriesInfo>,
     ) -> Option<usize> {
         let files = self.handle.get_files().await;
 
@@ -314,10 +309,7 @@ impl<H: TorrentHandle> Engine<H> {
     }
 
     pub async fn get_file(
-        self: &Arc<Self>,
-        file_idx: usize,
-        start_offset: u64,
-        priority: u8,
+        self: &Arc<Self>, file_idx: usize, start_offset: u64, priority: u8,
     ) -> Option<FileHandle<H>> {
         let intent = if priority == 255 {
             PlaybackIntent::InternalProbe
@@ -333,11 +325,7 @@ impl<H: TorrentHandle> Engine<H> {
     }
 
     pub async fn get_file_with_intent(
-        self: &Arc<Self>,
-        file_idx: usize,
-        start_offset: u64,
-        priority: u8,
-        intent: PlaybackIntent,
+        self: &Arc<Self>, file_idx: usize, start_offset: u64, priority: u8, intent: PlaybackIntent,
     ) -> Option<FileHandle<H>> {
         let startup = Instant::now();
         tracing::debug!(
@@ -628,9 +616,7 @@ impl<H: TorrentHandle> Engine<H> {
 
     /// Extract embedded subtitle track to VTT format
     pub async fn extract_embedded_subtitle(
-        &self,
-        file_idx: usize,
-        track_id: usize,
+        &self, file_idx: usize, track_id: usize,
     ) -> anyhow::Result<String> {
         // Special ID format: 1000 + stream_index
         if track_id < 1000 {

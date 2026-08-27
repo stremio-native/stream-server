@@ -175,9 +175,7 @@ impl TranscodeStream {
 
 impl AsyncRead for TranscodeStream {
     fn poll_read(
-        mut self: Pin<&mut Self>,
-        cx: &mut std::task::Context<'_>,
-        buf: &mut tokio::io::ReadBuf<'_>,
+        mut self: Pin<&mut Self>, cx: &mut std::task::Context<'_>, buf: &mut tokio::io::ReadBuf<'_>,
     ) -> Poll<std::io::Result<()>> {
         Pin::new(&mut self.stdout).poll_read(cx, buf)
     }
@@ -219,9 +217,7 @@ impl HlsEngine {
     }
 
     async fn probe_video_with_limits(
-        file_path: &str,
-        analyzeduration: u64,
-        probesize: u64,
+        file_path: &str, analyzeduration: u64, probesize: u64,
     ) -> Result<ProbeResult> {
         let mut cmd = Command::new("ffmpeg");
         cmd.arg("-analyzeduration").arg(analyzeduration.to_string());
@@ -359,11 +355,7 @@ impl HlsEngine {
     }
 
     pub fn get_master_playlist(
-        probe: &ProbeResult,
-        info_hash: &str,
-        file_idx: usize,
-        base_url: &str,
-        query_str: &str,
+        probe: &ProbeResult, info_hash: &str, file_idx: usize, base_url: &str, query_str: &str,
         subtitle_tracks: &[SubtitleTrack],
     ) -> String {
         let config = TranscodeConfig::browser();
@@ -468,11 +460,8 @@ impl HlsEngine {
     }
 
     pub fn get_stream_playlist(
-        probe: &ProbeResult,
-        _stream_idx: usize,
-        segment_base_url: &str,
-        audio_track_idx: Option<usize>,
-        query_str: &str,
+        probe: &ProbeResult, _stream_idx: usize, segment_base_url: &str,
+        audio_track_idx: Option<usize>, query_str: &str,
     ) -> String {
         let segments = Self::get_segments(probe.duration);
 
@@ -519,10 +508,7 @@ impl HlsEngine {
     /// Transcode video-only segment for HLS V2
     /// Implements exact logic from ebml_933.js
     pub async fn transcode_video_segment(
-        input_path: &str,
-        start: f64,
-        duration: f64,
-        config: &TranscodeConfig,
+        input_path: &str, start: f64, duration: f64, config: &TranscodeConfig,
     ) -> anyhow::Result<TranscodeProcess> {
         let mut cmd = tokio::process::Command::new("ffmpeg");
         configure_low_impact_ffmpeg(&mut cmd);
@@ -711,10 +697,7 @@ impl HlsEngine {
     /// Transcode audio-only segment for HLS V2
     /// Implements exact logic from ebml_933.js
     pub async fn transcode_audio_segment(
-        input_path: &str,
-        start: f64,
-        duration: f64,
-        audio_stream_index: usize,
+        input_path: &str, start: f64, duration: f64, audio_stream_index: usize,
         config: &TranscodeConfig,
     ) -> anyhow::Result<TranscodeProcess> {
         let mut cmd = tokio::process::Command::new("ffmpeg");

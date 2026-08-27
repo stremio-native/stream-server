@@ -48,10 +48,7 @@ impl LibtorrentTorrentHandle {
     }
 
     fn disk_readiness_target_pieces(
-        intent: PlaybackIntent,
-        piece: i32,
-        last_piece: i32,
-        piece_length: u64,
+        intent: PlaybackIntent, piece: i32, last_piece: i32, piece_length: u64,
         storage_mode: LibtorrentStorageMode,
     ) -> u32 {
         let remaining = (last_piece.saturating_sub(piece) + 1).max(1) as u32;
@@ -232,11 +229,7 @@ impl TorrentHandleTrait for LibtorrentTorrentHandle {
     }
 
     async fn get_file_reader(
-        &self,
-        file_idx: usize,
-        start_offset: u64,
-        priority: u8,
-        bitrate: Option<u64>,
+        &self, file_idx: usize, start_offset: u64, priority: u8, bitrate: Option<u64>,
         intent: PlaybackIntent,
     ) -> Result<Box<dyn FileStreamTrait>> {
         tracing::debug!("get_file_reader: starting for file {}", file_idx);
@@ -520,11 +513,7 @@ impl TorrentHandleTrait for LibtorrentTorrentHandle {
     }
 
     async fn wait_for_piece_ready(
-        &self,
-        file_idx: usize,
-        offset: u64,
-        timeout: std::time::Duration,
-        intent: PlaybackIntent,
+        &self, file_idx: usize, offset: u64, timeout: std::time::Duration, intent: PlaybackIntent,
     ) -> anyhow::Result<PieceReadiness> {
         let start = std::time::Instant::now();
         let mut last_peers = 0u64;

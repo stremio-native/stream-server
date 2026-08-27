@@ -46,10 +46,7 @@ pub struct RustReaderContext {
 
 #[no_mangle]
 pub unsafe extern "C" fn rust_read_cb(
-    ctx: *mut c_void,
-    buf: *mut c_void,
-    size: u32,
-    processed: *mut u32,
+    ctx: *mut c_void, buf: *mut c_void, size: u32, processed: *mut u32,
 ) -> i32 {
     let ctx = unsafe { &*(ctx as *mut RustReaderContext) };
     let (resp_tx, resp_rx) = std_mpsc::channel();
@@ -73,10 +70,7 @@ pub unsafe extern "C" fn rust_read_cb(
 
 #[no_mangle]
 pub unsafe extern "C" fn rust_seek_cb(
-    ctx: *mut c_void,
-    offset: i64,
-    origin: u32,
-    new_pos: *mut u64,
+    ctx: *mut c_void, offset: i64, origin: u32, new_pos: *mut u64,
 ) -> i32 {
     let ctx = unsafe { &*(ctx as *mut RustReaderContext) };
     let (resp_tx, resp_rx) = std_mpsc::channel();

@@ -20,10 +20,7 @@ pub(super) struct CachedPieceData {
 /// Returns CachedPieceData containing both the data and its file-relative start position
 #[allow(dead_code)]
 pub(super) async fn read_piece_from_disk(
-    file_path: &PathBuf,
-    piece_idx: i32,
-    piece_length: u64,
-    file_offset: u64,
+    file_path: &PathBuf, piece_idx: i32, piece_length: u64, file_offset: u64,
 ) -> std::io::Result<CachedPieceData> {
     use tokio::io::{AsyncReadExt, AsyncSeekExt};
 

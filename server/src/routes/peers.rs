@@ -7,8 +7,7 @@ use axum::{
 };
 
 pub async fn get_peers(
-    State(state): State<AppState>,
-    Path(info_hash): Path<String>,
+    State(state): State<AppState>, Path(info_hash): Path<String>,
 ) -> impl IntoResponse {
     let info_hash = info_hash.to_lowercase();
 

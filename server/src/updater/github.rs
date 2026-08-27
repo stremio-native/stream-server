@@ -43,9 +43,7 @@ pub async fn fetch_releases(client: &reqwest::Client) -> Result<Vec<GitHubReleas
 }
 
 pub fn select_latest_candidate(
-    releases: &[GitHubRelease],
-    channel: UpdateChannel,
-    current: &Version,
+    releases: &[GitHubRelease], channel: UpdateChannel, current: &Version,
 ) -> Result<Option<UpdateCandidate>, UpdateError> {
     let mut selected: Option<(Version, UpdateCandidate)> = None;
     let mut last_asset_error: Option<UpdateError> = None;

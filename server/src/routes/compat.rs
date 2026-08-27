@@ -126,9 +126,7 @@ pub fn add_dlna_headers(headers: &mut HeaderMap) {
 }
 
 pub fn resolve_file_idx(
-    requested_idx: &str,
-    files: &[FileCandidate],
-    filters: &[String],
+    requested_idx: &str, files: &[FileCandidate], filters: &[String],
 ) -> Result<usize, String> {
     if requested_idx != "-1" {
         let idx = requested_idx

@@ -138,9 +138,7 @@ async fn fetch_latest_changelog(channel: UpdateChannel) -> ChangelogResponse {
 }
 
 fn error_response(
-    channel: UpdateChannel,
-    state: ChangelogState,
-    message: String,
+    channel: UpdateChannel, state: ChangelogState, message: String,
 ) -> ChangelogResponse {
     ChangelogResponse {
         current_version: current_version().to_string(),
@@ -163,8 +161,7 @@ fn cache_key(channel: UpdateChannel) -> &'static str {
 }
 
 fn select_latest_changelog_release(
-    releases: &[GitHubRelease],
-    channel: UpdateChannel,
+    releases: &[GitHubRelease], channel: UpdateChannel,
 ) -> Option<(Version, GitHubRelease)> {
     let mut selected: Option<(Version, GitHubRelease)> = None;
 
@@ -282,9 +279,7 @@ fn bullet_item(line: &str) -> Option<&str> {
 }
 
 fn push_section(
-    sections: &mut Vec<ChangelogSection>,
-    title: Option<String>,
-    items: &mut Vec<String>,
+    sections: &mut Vec<ChangelogSection>, title: Option<String>, items: &mut Vec<String>,
 ) {
     let Some(title) = title else {
         items.clear();

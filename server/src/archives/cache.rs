@@ -36,8 +36,7 @@ impl ProgressiveCache {
     /// Create a new ProgressiveCache in a specific directory
     /// This allows respecting the user's cache_root setting
     pub async fn new_in_dir(
-        dir: &std::path::Path,
-        total_size: Option<u64>,
+        dir: &std::path::Path, total_size: Option<u64>,
     ) -> io::Result<(Self, CacheWriter)> {
         // Ensure directory exists
         if !dir.exists() {
@@ -50,8 +49,7 @@ impl ProgressiveCache {
     }
 
     async fn from_temp_file(
-        temp_file: NamedTempFile,
-        total_size: Option<u64>,
+        temp_file: NamedTempFile, total_size: Option<u64>,
     ) -> io::Result<(Self, CacheWriter)> {
         let temp_path = temp_file.path().to_path_buf();
         let handle = Arc::new(temp_file);
@@ -114,9 +112,7 @@ pub struct CacheWriter {
 
 impl AsyncWrite for CacheWriter {
     fn poll_write(
-        mut self: Pin<&mut Self>,
-        cx: &mut Context<'_>,
-        buf: &[u8],
+        mut self: Pin<&mut Self>, cx: &mut Context<'_>, buf: &[u8],
     ) -> Poll<io::Result<usize>> {
         let poll = Pin::new(&mut self.file).poll_write(cx, buf);
         if let Poll::Ready(Ok(n)) = poll
@@ -219,9 +215,7 @@ pub struct ProgressiveReader {
 
 impl AsyncRead for ProgressiveReader {
     fn poll_read(
-        mut self: Pin<&mut Self>,
-        cx: &mut Context<'_>,
-        buf: &mut tokio::io::ReadBuf<'_>,
+        mut self: Pin<&mut Self>, cx: &mut Context<'_>, buf: &mut tokio::io::ReadBuf<'_>,
     ) -> Poll<io::Result<()>> {
         loop {
             // 1. Snapshot state

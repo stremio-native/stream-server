@@ -31,8 +31,7 @@ pub struct PeerSearchBody {
 }
 
 pub async fn create_engine(
-    State(state): State<AppState>,
-    Json(payload): Json<CreateEngineRequest>,
+    State(state): State<AppState>, Json(payload): Json<CreateEngineRequest>,
 ) -> impl IntoResponse {
     let source = if let Some(hex_str) = payload.torrent {
         match hex::decode(hex_str) {
@@ -67,8 +66,7 @@ pub async fn list_engines(State(state): State<AppState>) -> impl IntoResponse {
 }
 
 pub async fn remove_engine(
-    State(state): State<AppState>,
-    axum::extract::Path(info_hash): axum::extract::Path<String>,
+    State(state): State<AppState>, axum::extract::Path(info_hash): axum::extract::Path<String>,
 ) -> impl IntoResponse {
     state
         .stream_engine()
@@ -105,8 +103,7 @@ pub struct CreateMagnetStream {
 }
 
 pub async fn create_magnet(
-    State(state): State<AppState>,
-    axum::extract::Path(info_hash): axum::extract::Path<String>,
+    State(state): State<AppState>, axum::extract::Path(info_hash): axum::extract::Path<String>,
     Json(payload): Json<CreateMagnetRequest>,
 ) -> impl IntoResponse {
     // Use the info_hash from path or body
@@ -139,8 +136,7 @@ pub async fn create_magnet(
 }
 
 pub async fn create_magnet_get(
-    State(state): State<AppState>,
-    axum::extract::Path(info_hash): axum::extract::Path<String>,
+    State(state): State<AppState>, axum::extract::Path(info_hash): axum::extract::Path<String>,
 ) -> impl IntoResponse {
     let magnet = format!("magnet:?xt=urn:btih:{}", info_hash);
     let source = enginefs::backend::TorrentSource::Url(magnet);
@@ -155,8 +151,7 @@ pub async fn create_magnet_get(
 }
 
 fn merged_trackers(
-    announce: Option<Vec<String>>,
-    peer_search: Option<PeerSearchBody>,
+    announce: Option<Vec<String>>, peer_search: Option<PeerSearchBody>,
 ) -> Vec<String> {
     let mut sources = announce.unwrap_or_default();
     if let Some(peer_search) = peer_search {
@@ -174,9 +169,7 @@ fn guess_file_idx_requested(value: Option<&serde_json::Value>) -> bool {
 }
 
 async fn stats_with_guess<H>(
-    engine: &Arc<enginefs::engine::Engine<H>>,
-    filters: &[String],
-    should_guess: bool,
+    engine: &Arc<enginefs::engine::Engine<H>>, filters: &[String], should_guess: bool,
 ) -> serde_json::Value
 where
     H: TorrentHandle,

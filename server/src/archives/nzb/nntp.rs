@@ -31,9 +31,7 @@ struct NntpStream {
 
 impl tokio::io::AsyncRead for NntpStream {
     fn poll_read(
-        mut self: Pin<&mut Self>,
-        cx: &mut Context<'_>,
-        buf: &mut tokio::io::ReadBuf<'_>,
+        mut self: Pin<&mut Self>, cx: &mut Context<'_>, buf: &mut tokio::io::ReadBuf<'_>,
     ) -> Poll<std::io::Result<()>> {
         match &mut self.inner {
             StreamType::Plain(s) => Pin::new(s).poll_read(cx, buf),
@@ -44,9 +42,7 @@ impl tokio::io::AsyncRead for NntpStream {
 
 impl tokio::io::AsyncWrite for NntpStream {
     fn poll_write(
-        mut self: Pin<&mut Self>,
-        cx: &mut Context<'_>,
-        buf: &[u8],
+        mut self: Pin<&mut Self>, cx: &mut Context<'_>, buf: &[u8],
     ) -> Poll<std::io::Result<usize>> {
         match &mut self.inner {
             StreamType::Plain(s) => Pin::new(s).poll_write(cx, buf),

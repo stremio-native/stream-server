@@ -107,8 +107,7 @@ async fn resolve_path(url: &str) -> Result<PathBuf, StatusCode> {
 }
 
 fn parse_create_request(
-    lz: Option<String>,
-    body: &axum::body::Bytes,
+    lz: Option<String>, body: &axum::body::Bytes,
 ) -> Result<ArchiveCreateRequest, String> {
     let value = if let Some(lz) = lz {
         let utf16 = lz_str::decompress_from_encoded_uri_component(&lz)
@@ -197,9 +196,7 @@ fn archive_url_from_value(value: &serde_json::Value) -> Option<String> {
 }
 
 async fn select_archive_file(
-    state: &AppState,
-    path: &std::path::Path,
-    request: &ArchiveCreateRequest,
+    state: &AppState, path: &std::path::Path, request: &ArchiveCreateRequest,
 ) -> Result<Option<String>, StatusCode> {
     let settings = state.settings.read().await;
     let cache_config = crate::archives::CacheConfig {
@@ -249,9 +246,7 @@ async fn select_archive_file(
 }
 
 async fn create_session_auto(
-    State(state): State<AppState>,
-    method: Method,
-    Query(query): Query<CreateQuery>,
+    State(state): State<AppState>, method: Method, Query(query): Query<CreateQuery>,
     body: axum::body::Bytes,
 ) -> Response {
     let key = Uuid::new_v4().to_string();
@@ -259,21 +254,14 @@ async fn create_session_auto(
 }
 
 async fn create_session_with_key(
-    State(state): State<AppState>,
-    Path(key): Path<String>,
-    method: Method,
-    Query(query): Query<CreateQuery>,
-    body: axum::body::Bytes,
+    State(state): State<AppState>, Path(key): Path<String>, method: Method,
+    Query(query): Query<CreateQuery>, body: axum::body::Bytes,
 ) -> Response {
     create_session_internal(state, key, method, query, body).await
 }
 
 async fn create_session_internal(
-    state: AppState,
-    key: String,
-    method: Method,
-    query: CreateQuery,
-    body: axum::body::Bytes,
+    state: AppState, key: String, method: Method, query: CreateQuery, body: axum::body::Bytes,
 ) -> Response {
     let payload = match parse_create_request(query.lz, &body) {
         Ok(payload) => payload,
@@ -331,9 +319,7 @@ async fn create_session_internal(
 }
 
 async fn stream_content_query(
-    State(state): State<AppState>,
-    headers: header::HeaderMap,
-    Query(params): Query<StreamParams>,
+    State(state): State<AppState>, headers: header::HeaderMap, Query(params): Query<StreamParams>,
 ) -> Result<Response, StatusCode> {
     let file = if let Some(file) = params.file {
         file
@@ -348,16 +334,14 @@ async fn stream_content_query(
 }
 
 async fn stream_content_path(
-    State(state): State<AppState>,
-    headers: header::HeaderMap,
+    State(state): State<AppState>, headers: header::HeaderMap,
     Path((key, file)): Path<(String, String)>,
 ) -> Result<Response, StatusCode> {
     stream_file(&state, &key, &file, &headers).await
 }
 
 async fn stream_redirection(
-    State(state): State<AppState>,
-    Path(key): Path<String>,
+    State(state): State<AppState>, Path(key): Path<String>,
 ) -> Result<Response, StatusCode> {
     let session = state.archive_cache.get(&key).ok_or(StatusCode::NOT_FOUND)?;
     if let Some(file) = &session.selected_file {
@@ -381,10 +365,7 @@ fn encode_path_segments(path: &str) -> String {
 
 // New implementation of stream_file
 async fn stream_file(
-    state: &AppState,
-    key: &str,
-    file_path_in_archive: &str,
-    headers: &header::HeaderMap,
+    state: &AppState, key: &str, file_path_in_archive: &str, headers: &header::HeaderMap,
 ) -> Result<Response, StatusCode> {
     // 1. Determine Input Source
     let archive_reader: Box<dyn crate::archives::ArchiveReader> = if key.starts_with("torrent:") {
@@ -465,8 +446,7 @@ async fn stream_file(
                 // Wrapper impls
                 impl tokio::io::AsyncRead for BackendStreamWrapper {
                     fn poll_read(
-                        mut self: std::pin::Pin<&mut Self>,
-                        cx: &mut std::task::Context<'_>,
+                        mut self: std::pin::Pin<&mut Self>, cx: &mut std::task::Context<'_>,
                         buf: &mut tokio::io::ReadBuf<'_>,
                     ) -> std::task::Poll<std::io::Result<()>> {
                         std::pin::Pin::new(&mut self.0).poll_read(cx, buf)
@@ -474,14 +454,12 @@ async fn stream_file(
                 }
                 impl tokio::io::AsyncSeek for BackendStreamWrapper {
                     fn start_seek(
-                        mut self: std::pin::Pin<&mut Self>,
-                        position: std::io::SeekFrom,
+                        mut self: std::pin::Pin<&mut Self>, position: std::io::SeekFrom,
                     ) -> std::io::Result<()> {
                         std::pin::Pin::new(&mut self.0).start_seek(position)
                     }
                     fn poll_complete(
-                        mut self: std::pin::Pin<&mut Self>,
-                        cx: &mut std::task::Context<'_>,
+                        mut self: std::pin::Pin<&mut Self>, cx: &mut std::task::Context<'_>,
                     ) -> std::task::Poll<std::io::Result<u64>> {
                         std::pin::Pin::new(&mut self.0).poll_complete(cx)
                     }

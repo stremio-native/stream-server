@@ -104,8 +104,7 @@ fn is_sha256(value: &str) -> bool {
 }
 
 pub async fn fetch_checksum_text(
-    client: &reqwest::Client,
-    asset: &ReleaseAssetInfo,
+    client: &reqwest::Client, asset: &ReleaseAssetInfo,
 ) -> Result<String, UpdateError> {
     let text = client
         .get(&asset.download_url)
@@ -118,9 +117,7 @@ pub async fn fetch_checksum_text(
 }
 
 pub async fn download_asset(
-    client: &reqwest::Client,
-    asset: &ReleaseAssetInfo,
-    dest: &Path,
+    client: &reqwest::Client, asset: &ReleaseAssetInfo, dest: &Path,
 ) -> Result<(), UpdateError> {
     if let Some(parent) = dest.parent() {
         tokio::fs::create_dir_all(parent).await?;
@@ -149,9 +146,7 @@ pub async fn sha256_file(path: &Path) -> Result<String, UpdateError> {
 }
 
 pub async fn verify_file_checksum(
-    asset: &ReleaseAssetInfo,
-    path: &Path,
-    checksums: &HashMap<String, String>,
+    asset: &ReleaseAssetInfo, path: &Path, checksums: &HashMap<String, String>,
 ) -> Result<String, UpdateError> {
     let expected = checksums.get(&asset.name).ok_or_else(|| {
         UpdateError::new(

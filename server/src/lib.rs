@@ -211,25 +211,21 @@ pub fn start(cfg: ServerConfig) -> anyhow::Result<ServerHandle> {
 }
 
 pub async fn run(
-    cfg: ServerConfig,
-    external_shutdown_rx: tokio::sync::mpsc::Receiver<()>,
+    cfg: ServerConfig, external_shutdown_rx: tokio::sync::mpsc::Receiver<()>,
     ready_tx: Option<tokio::sync::oneshot::Sender<SocketAddr>>,
 ) -> anyhow::Result<Option<ShutdownSource>> {
     run_inner(cfg, external_shutdown_rx, None, ready_tx).await
 }
 
 pub async fn run_with_tray_stats(
-    cfg: ServerConfig,
-    external_shutdown_rx: tokio::sync::mpsc::Receiver<()>,
-    tray_stats: Arc<tray::TrayStats>,
-    ready_tx: Option<tokio::sync::oneshot::Sender<SocketAddr>>,
+    cfg: ServerConfig, external_shutdown_rx: tokio::sync::mpsc::Receiver<()>,
+    tray_stats: Arc<tray::TrayStats>, ready_tx: Option<tokio::sync::oneshot::Sender<SocketAddr>>,
 ) -> anyhow::Result<Option<ShutdownSource>> {
     run_inner(cfg, external_shutdown_rx, Some(tray_stats), ready_tx).await
 }
 
 async fn run_inner(
-    cfg: ServerConfig,
-    mut external_shutdown_rx: tokio::sync::mpsc::Receiver<()>,
+    cfg: ServerConfig, mut external_shutdown_rx: tokio::sync::mpsc::Receiver<()>,
     tray_stats: Option<Arc<tray::TrayStats>>,
     ready_tx: Option<tokio::sync::oneshot::Sender<SocketAddr>>,
 ) -> anyhow::Result<Option<ShutdownSource>> {

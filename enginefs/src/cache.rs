@@ -29,10 +29,7 @@ pub struct CachedStream {
 
 impl CachedStream {
     pub fn new(
-        inner: Box<dyn FileStreamTrait>,
-        cache: DataCache,
-        file_index: usize,
-        file_length: u64,
+        inner: Box<dyn FileStreamTrait>, cache: DataCache, file_index: usize, file_length: u64,
     ) -> Self {
         Self {
             inner: Arc::new(Mutex::new(inner)),
@@ -106,9 +103,7 @@ impl AsyncSeek for CachedStream {
 
 impl AsyncRead for CachedStream {
     fn poll_read(
-        mut self: Pin<&mut Self>,
-        cx: &mut Context<'_>,
-        buf: &mut ReadBuf<'_>,
+        mut self: Pin<&mut Self>, cx: &mut Context<'_>, buf: &mut ReadBuf<'_>,
     ) -> Poll<io::Result<()>> {
         loop {
             // Check if we are done
