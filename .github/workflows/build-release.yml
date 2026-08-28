@@ -248,12 +248,24 @@ jobs:
           cd pkg
           useradd -m builder
           chown -R builder:builder .
-          # Configure makepkg to sign with our key
+          # Configure makepkg to sign with our key (if a key secret is present).
+          # The .gnupg homedir must be owned by 'builder' or gpg cannot write
+          # its keyring when invoked via 'su builder -c'.
           mkdir -p /home/builder/.gnupg
           chmod 700 /home/builder/.gnupg
-          echo "${{ secrets.GPG_PRIVATE_KEY }}" | su builder -c "gpg --batch --import"
-          su builder -c "echo 'GPGKEY=release@stream-server.local' >> /home/builder/.config/makepkg.conf 2>/dev/null || echo 'GPGKEY=release@stream-server.local' >> /etc/makepkg.conf"
-          su builder -c "makepkg -sf --noconfirm --sign"
+          chown -R builder:builder /home/builder/.gnupg
+          KEY_PRESENT=0
+          if [ -n "${{ secrets.GPG_PRIVATE_KEY }}" ]; then
+            echo "${{ secrets.GPG_PRIVATE_KEY }}" | su builder -c "gpg --batch --import" \
+              && KEY_PRESENT=1 || KEY_PRESENT=0
+          fi
+          if [ "$KEY_PRESENT" = "1" ]; then
+            su builder -c "echo 'GPGKEY=release@stream-server.local' >> /home/builder/.config/makepkg.conf 2>/dev/null || echo 'GPGKEY=release@stream-server.local' >> /etc/makepkg.conf"
+            su builder -c "makepkg -sf --noconfirm --sign"
+          else
+            echo "No GPG key secret configured on this fork; building unsigned package."
+            su builder -c "makepkg -sf --noconfirm"
+          fi
       - name: Upload Arch Package
         uses: actions/upload-artifact@v7
         with:
