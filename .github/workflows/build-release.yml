@@ -201,7 +201,12 @@ jobs:
       - name: Install dependencies
         run: |
           pacman -Syu --noconfirm
-          pacman -S --needed --noconfirm base-devel cmake curl rust git openssl pkg-config boost clang gtk3 libayatana-appindicator
+          pacman -S --needed --noconfirm base-devel cmake curl rust git openssl pkg-config boost clang gtk3 libayatana-appindicator gnupg
+      - name: Import GPG key
+        run: |
+          echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import
+          gpg --batch --yes --pinentry-mode loopback --passphrase "${{ secrets.GPG_PASSPHRASE }}" --sign-key release@stream-server.local 2>/dev/null || true
+          echo "GPG key imported"
       - name: Install libtorrent 2.1.1
         run: bash .github/scripts/install-libtorrent.sh
       - name: Cargo Cache
@@ -238,17 +243,24 @@ jobs:
           EOF
           cp target/release/server pkg/stream-server
           cp target/release/settings-gui pkg/settings-gui
-      - name: Build package
+      - name: Build and sign package
         run: |
           cd pkg
           useradd -m builder
           chown -R builder:builder .
-          su builder -c "makepkg -sf --noconfirm"
+          # Configure makepkg to sign with our key
+          mkdir -p /home/builder/.gnupg
+          chmod 700 /home/builder/.gnupg
+          echo "${{ secrets.GPG_PRIVATE_KEY }}" | su builder -c "gpg --batch --import"
+          su builder -c "echo 'GPGKEY=release@stream-server.local' >> /home/builder/.config/makepkg.conf 2>/dev/null || echo 'GPGKEY=release@stream-server.local' >> /etc/makepkg.conf"
+          su builder -c "makepkg -sf --noconfirm --sign"
       - name: Upload Arch Package
         uses: actions/upload-artifact@v7
         with:
           name: server-arch-pkg
-          path: pkg/*.pkg.tar.zst
+          path: |
+            pkg/*.pkg.tar.zst
+            pkg/*.pkg.tar.zst.sig
 
   release:
     name: Create Release
@@ -293,6 +305,7 @@ jobs:
           copy_latest artifacts/server-linux-deb "*.deb" stream-server-linux-amd64.deb
           copy_latest artifacts/server-linux-appimage "*.AppImage" stream-server-linux-amd64.AppImage
           copy_latest artifacts/server-arch-pkg "stream-server-[0-9]*.pkg.tar.zst" stream-server-arch-x86_64.pkg.tar.zst
+          copy_latest artifacts/server-arch-pkg "stream-server-[0-9]*.pkg.tar.zst.sig" stream-server-arch-x86_64.pkg.tar.zst.sig
           (cd release && sha256sum * > SHA256SUMS.txt)
           ls -la release/
       - name: Generate release description
