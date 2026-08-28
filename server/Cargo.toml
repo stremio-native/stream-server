@@ -67,6 +67,7 @@ tokio-native-tls = "0.3.1"
 native-tls = "0.2.14"
 async-channel = "2.5.0"
 bytes = "1.11.0"
+tokio-stream = { version = "0.1", default-features = false, features = ["sync"] }
 axum-server = { version = "0.8.0", features = ["tls-rustls"] }
 ssdp-client = "2.1.0"
 fslock = "0.2.1"
@@ -106,6 +107,9 @@ windows = { version = "0.62.2", features = [
 
 
 [features]
+# libtorrent is the only fully-implemented backend in this fork; librqbit is a
+# non-functional placeholder (no enginefs/src/backend/librqbit module exists),
+# so it must not be the default or the build fails.
 default = ["libtorrent"]
 libtorrent = ["enginefs/libtorrent"]
 librqbit = ["enginefs/librqbit", "dep:librqbit"]

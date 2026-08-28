@@ -97,6 +97,12 @@ pub struct ServerSettings {
     pub cache_size: f64,
     #[serde(rename = "proxyStreamsEnabled")]
     pub proxy_streams_enabled: bool,
+    /// How many MiB of upstream data the /proxy route pulls ahead of the player
+    /// for debrid/HLS webstreams (the kind AIOStreams-Lite / M-T-E emit as
+    /// `url` streams). A windowed read-ahead absorbs upstream jitter on a weak
+    /// CPU / slow link so playback doesn't stall. 0 disables buffering.
+    #[serde(rename = "proxyReadAheadMiB", default = "default_proxy_read_ahead_mib")]
+    pub proxy_read_ahead_mib: u32,
     #[serde(rename = "btMaxConnections")]
     pub bt_max_connections: u64,
     #[serde(rename = "btHandshakeTimeout")]
@@ -250,6 +256,13 @@ pub fn default_bt_proxy_peer_connections() -> bool {
     false
 }
 
+pub fn default_proxy_read_ahead_mib() -> u32 {
+    // 16 MiB read-ahead window for debrid/HLS webstreams — absorbs upstream
+    // jitter on a weak CPU / slow link so playback (e.g. from the AIOStreams-Lite
+    // addon) doesn't stall.
+    16
+}
+
 pub fn default_bt_proxy_tracker_connections() -> bool {
     true
 }
@@ -381,6 +394,7 @@ impl Default for ServerSettings {
             cache_root,
             cache_size: 10.0 * 1024.0 * 1024.0 * 1024.0, // 10GB
             proxy_streams_enabled: false,
+            proxy_read_ahead_mib: default_proxy_read_ahead_mib(),
             bt_max_connections: enginefs::backend::DEFAULT_BT_MAX_CONNECTIONS,
             bt_handshake_timeout: 20000,
             bt_request_timeout: 10000,
@@ -463,6 +477,12 @@ pub async fn update_settings(state: &AppState, payload: &Value) -> anyhow::Resul
             && let Some(b) = v.as_bool()
         {
             settings.proxy_streams_enabled = b;
+        }
+        if let Some(v) = obj.get("proxyReadAheadMiB")
+            && let Some(n) = v.as_u64()
+        {
+            // Clamp to a sane range: 0 (off) .. 256 MiB.
+            settings.proxy_read_ahead_mib = n.min(256) as u32;
         }
         if let Some(v) = obj.get("btMaxConnections")
             && let Some(n) = v.as_u64()

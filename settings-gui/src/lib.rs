@@ -27,6 +27,8 @@ pub struct SettingsPayload {
     pub cache_size: f64,
     #[serde(rename = "proxyStreamsEnabled", default)]
     pub proxy_streams_enabled: bool,
+    #[serde(rename = "proxyReadAheadMiB", default)]
+    pub proxy_read_ahead_mib: u32,
     #[serde(rename = "btMaxConnections", default)]
     pub bt_max_connections: u64,
     #[serde(rename = "btHandshakeTimeout", default)]
@@ -1437,6 +1439,7 @@ fn write_settings_to_ui(ui: &AppWindow, settings: SettingsPayload) {
     ui.set_cache_root(settings.cache_root.into());
     ui.set_cache_size(settings.cache_size.to_string().into());
     ui.set_proxy_streams_enabled(settings.proxy_streams_enabled);
+    ui.set_proxy_read_ahead_mib(settings.proxy_read_ahead_mib.to_string().into());
     ui.set_bt_max_connections(settings.bt_max_connections.to_string().into());
     ui.set_bt_handshake_timeout(settings.bt_handshake_timeout.to_string().into());
     ui.set_bt_request_timeout(settings.bt_request_timeout.to_string().into());
@@ -1475,6 +1478,11 @@ fn read_settings_from_ui(ui: &AppWindow) -> Result<SettingsPayload> {
         cache_root: ui.get_cache_root().to_string(),
         cache_size: parse_f64("cacheSize", ui.get_cache_size())?,
         proxy_streams_enabled: ui.get_proxy_streams_enabled(),
+        proxy_read_ahead_mib: ui
+            .get_proxy_read_ahead_mib()
+            .trim()
+            .parse()
+            .unwrap_or(16u32),
         bt_max_connections: parse_u64("btMaxConnections", ui.get_bt_max_connections())?,
         bt_handshake_timeout: parse_u64("btHandshakeTimeout", ui.get_bt_handshake_timeout())?,
         bt_request_timeout: parse_u64("btRequestTimeout", ui.get_bt_request_timeout())?,

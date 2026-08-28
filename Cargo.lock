@@ -7533,6 +7533,7 @@ dependencies = [
  "tempfile",
  "tokio",
  "tokio-native-tls",
+ "tokio-stream",
  "tokio-util",
  "tower-http 0.7.0",
  "tracing",

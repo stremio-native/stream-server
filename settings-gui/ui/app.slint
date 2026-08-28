@@ -92,6 +92,7 @@ export component AppWindow inherits Window {
     in-out property <string> cache-root;
     in-out property <string> cache-size;
     in-out property <bool> proxy-streams-enabled;
+    in-out property <string> proxy-read-ahead-mib;
     in-out property <string> bt-max-connections;
     in-out property <string> bt-handshake-timeout;
     in-out property <string> bt-request-timeout;
@@ -335,6 +336,10 @@ export component AppWindow inherits Window {
                             TextField { text <=> root.cache-size; horizontal-stretch: 1; }
                         }
                         ToggleRow { label: "Proxy streams"; checked <=> root.proxy-streams-enabled; }
+                        FieldRow {
+                            label: "Proxy read-ahead (MiB)";
+                            TextField { text <=> root.proxy-read-ahead-mib; horizontal-stretch: 1; }
+                        }
                     }
 
                     // ---------------- Privacy ----------------

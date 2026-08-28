@@ -11,8 +11,14 @@ members = [
     "settings-gui",
 ]
 
+# Optimized for a weak laptop CPU (Intel i5-5200U) + 7.7 GiB RAM.
+# opt-level "3" favors decode/streaming throughput over binary size
+# (the upstream "z" setting shrank the binary at the cost of runtime speed,
+# which hurts a live streaming proxy on slow hardware).
+# lto + single codegen-unit keep runtime fast at the cost of a longer build
+# (built once, run many times).
 [profile.release]
-opt-level = "z"
+opt-level = 3
 lto = true
 codegen-units = 1
 panic = "abort"

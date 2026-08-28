@@ -1,14 +1,28 @@
 use crate::state::AppState;
 use axum::{
     Router,
-    extract::{Path, Query},
+    extract::{Path, Query, State},
     http::{HeaderMap, StatusCode, header},
     response::{IntoResponse, Response},
     routing::any,
 };
+use bytes::Bytes;
 use reqwest::{Client, Method};
 use std::collections::HashMap;
+use std::io;
+use tokio::sync::mpsc;
+use tokio_stream::wrappers::ReceiverStream;
 use url::Url;
+
+/// Stream item type handed from the upstream reader task to the response body.
+/// `axum::body::Body::from_stream` expects `Stream<Item = Result<Bytes, E>>`,
+/// matching the proven passthrough path (`response.bytes_stream()`).
+type ProxyChunk = Result<Bytes, io::Error>;
+
+/// Never buffer more than this; protects the 7.7 GiB-RAM laptop from a stuck
+/// upstream feeding unbounded memory. The proxy falls back to a plain
+/// pass-through if the body is larger than this.
+const MAX_BUFFER_BYTES: usize = 64 * 1024 * 1024;
 
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -18,9 +32,16 @@ pub fn router() -> Router<AppState> {
 }
 
 pub async fn proxy_handler(
+    State(state): State<AppState>,
     Path(rest): Path<String>, axum::extract::RawQuery(raw_query): axum::extract::RawQuery,
     Query(params): Query<HashMap<String, String>>, headers: HeaderMap, method: Method,
 ) -> impl IntoResponse {
+    // Read-ahead window for webstreams, from settings (0 = passthrough).
+    let read_ahead_mib = {
+        let s = state.settings.read().await;
+        s.proxy_read_ahead_mib
+    };
+    let read_ahead_bytes = (read_ahead_mib as usize) * 1024 * 1024;
     // Porting the logic from express_805.js
     // Format 1: ?d=URL (standard)
     // Format 2: /<query_params>/<path> (Core) where query_params contains d=ORIGIN&h=HEADER&r=RESPONSE_HEADER
@@ -93,6 +114,7 @@ pub async fn proxy_handler(
 
     let client = Client::builder()
         .danger_accept_invalid_certs(true) // Parity with rejectUnauthorized: false
+        .pool_max_idle_per_host(8)
         .build()
         .unwrap();
 
@@ -170,8 +192,6 @@ pub async fn proxy_handler(
 
     if is_playlist {
         // We need to rewrite the playlist.
-        // For now, let's just stream it without rewriting as a first step,
-        // then add rewriting if segments fail.
         let body = response.text().await.unwrap_or_default();
         let rewritten = rewrite_playlist(&body, &url);
         return res_builder
@@ -180,9 +200,59 @@ pub async fn proxy_handler(
             .into_response();
     }
 
-    let stream = response.bytes_stream();
+    // For non-playlist media (debrid webstreams, subtitles, etc.) we buffer a
+    // window ahead of the player so a slow upstream can't stall it.
+    // read_ahead_bytes == 0 means the user disabled buffering -> plain passthrough.
+    let content_length: Option<u64> = res_headers
+        .get(header::CONTENT_LENGTH)
+        .and_then(|v| v.to_str().ok())
+        .and_then(|s| s.parse().ok());
+    if read_ahead_bytes == 0 || content_length.is_some_and(|len| len > MAX_BUFFER_BYTES as u64) {
+        let stream = response.bytes_stream();
+        return res_builder
+            .body(axum::body::Body::from_stream(stream))
+            .unwrap()
+            .into_response();
+    }
+
+    // Spawn a task that drains the upstream into a channel while the response
+    // body (built from that channel's receiver) is streamed to the player.
+    // The channel capacity is the read-ahead window expressed in 64 KiB
+    // chunks: once ~read_ahead_bytes of upstream data are buffered ahead of the
+    // player, `tx.send()` blocks and back-pressures the upstream, keeping memory
+    // bounded while still staying well ahead of playback. As the player drains
+    // the channel, the producer fetches more.
+    let chunk_capacity = (read_ahead_bytes / (64 * 1024)).max(1);
+    let (tx, rx): (mpsc::Sender<ProxyChunk>, mpsc::Receiver<ProxyChunk>) =
+        mpsc::channel(chunk_capacity);
+    tokio::spawn(async move {
+        let mut buf: Vec<u8> = Vec::with_capacity(64 * 1024);
+        let mut stream = response.bytes_stream();
+        use futures_util::StreamExt;
+        while let Some(chunk_res) = stream.next().await {
+            let chunk: Bytes = match chunk_res {
+                Ok(c) => c,
+                Err(_) => break,
+            };
+            buf.extend_from_slice(&chunk);
+            // Flush in fixed 64 KiB frames so each channel message is uniform
+            // and the capacity math above maps cleanly to the byte window.
+            while buf.len() >= 64 * 1024 {
+                let tail = buf.split_off(64 * 1024);
+                if tx.send(Ok(Bytes::from(buf))).await.is_err() {
+                    return; // client disconnected
+                }
+                buf = tail;
+            }
+        }
+        if !buf.is_empty() {
+            let _ = tx.send(Ok(Bytes::from(buf))).await;
+        }
+    });
+
+    let body_stream = ReceiverStream::new(rx);
     res_builder
-        .body(axum::body::Body::from_stream(stream))
+        .body(axum::body::Body::from_stream(body_stream))
         .unwrap()
         .into_response()
 }
@@ -194,11 +264,11 @@ fn rewrite_playlist(body: &str, base_url: &Url) -> String {
             rewritten.push('\n');
             continue;
         }
-        if line.starts_with("#") {
+        if line.starts_with('#') {
             // Handle URI="url" in tags like #EXT-X-MEDIA
             if let Some(start) = line.find("URI=\"") {
                 let rest = &line[start + 5..];
-                if let Some(end) = rest.find("\"") {
+                if let Some(end) = rest.find('"') {
                     let uri = &rest[..end];
                     let absolute_uri = if uri.contains("://") {
                         uri.to_string()
