@@ -60,8 +60,8 @@ export component AppWindow inherits Window {
     icon: Icons.logo;
     preferred-width: 1040px;
     preferred-height: 720px;
-    min-width: 900px;
-    min-height: 600px;
+    min-width: 880px;
+    min-height: 480px;
     background: Theme.bg;
 
     // ---- Preserved properties (names must match main.rs generated accessors) ----
@@ -599,21 +599,18 @@ export component AppWindow inherits Window {
                 spacing: 0px;
 
                 Rectangle {
-                    width: 250px;
+                    width: 226px;
                     background: Theme.bg;
                     border-width: 1px;
                     border-color: Theme.border;
 
-                    Rectangle {
-                        x: parent.width - 1px;
-                        width: 1px;
+                    ScrollView {
+                        width: parent.width - 1px;
                         height: parent.height;
-                        background: Theme.border;
-                    }
 
-                    VerticalLayout {
-                        padding: 14px;
-                        spacing: 18px;
+                        VerticalLayout {
+                            padding: 14px;
+                            spacing: 18px;
 
                         HorizontalLayout {
                             height: 36px;
@@ -736,6 +733,14 @@ export component AppWindow inherits Window {
                             font-size: 10px;
                             wrap: word-wrap;
                         }
+                        }
+                    }
+
+                    Rectangle {
+                        x: parent.width - 1px;
+                        width: 1px;
+                        height: parent.height;
+                        background: Theme.border;
                     }
                 }
 
@@ -826,180 +831,187 @@ export component AppWindow inherits Window {
 
                         TimelineHistogram { bins: root.log-timeline-bins; }
 
-                        Rectangle {
-                            height: 36px;
-                            border-width: 1px;
-                            border-color: Theme.border;
-                            background: Theme.surface;
-
-                            HorizontalLayout {
-                                padding-left: 10px;
-                                padding-right: 12px;
-                                spacing: 12px;
-
-                                Text { text: "Time"; width: 160px; color: Theme.text-muted; font-size: Theme.fs-label; vertical-alignment: center; }
-                                Text { text: "Level"; width: 78px; color: Theme.text-muted; font-size: Theme.fs-label; vertical-alignment: center; }
-                                Text { text: "Target"; width: 270px; color: Theme.text-muted; font-size: Theme.fs-label; vertical-alignment: center; overflow: elide; }
-                                Text { text: "Message"; horizontal-stretch: 1; color: Theme.text-muted; font-size: Theme.fs-label; vertical-alignment: center; }
-                            }
-                        }
-
-                        if root.log-entries.length == 0 : Rectangle {
-                            vertical-stretch: 1;
-                            border-radius: Theme.radius-sm;
-                            border-width: 1px;
-                            border-color: Theme.border;
-                            background: Theme.surface;
-
-                            Text {
-                                text: root.log-status;
-                                color: Theme.text-muted;
-                                font-size: Theme.fs-label;
-                                width: parent.width;
-                                height: parent.height;
-                                horizontal-alignment: center;
-                                vertical-alignment: center;
-                            }
-                        }
-
-                        if root.log-entries.length > 0 : ScrollView {
+                        ScrollView {
                             vertical-stretch: 1;
 
                             VerticalLayout {
                                 spacing: 0px;
 
                                 Rectangle {
-                                    height: 32px;
-                                    background: Theme.accent-soft;
-                                    border-radius: 5px;
+                                    height: 36px;
+                                    border-width: 1px;
+                                    border-color: Theme.border;
+                                    background: Theme.surface;
 
                                     HorizontalLayout {
-                                        padding-left: 12px;
-                                        spacing: 10px;
+                                        padding-left: 10px;
+                                        padding-right: 12px;
+                                        spacing: 12px;
 
-                                        Rectangle {
-                                            width: 14px;
-                                            height: parent.height;
-
-                                            Image {
-                                                source: Icons.live;
-                                                width: 14px;
-                                                height: 14px;
-                                                x: (parent.width - self.width) / 2;
-                                                y: (parent.height - self.height) / 2;
-                                                colorize: Theme.accent;
-                                            }
-                                        }
-
-                                        Text {
-                                            text: root.log-live-enabled ? (root.log-active-target != "" ? "Live Mode - " + root.log-active-target : "Live Mode") : "Paused";
-                                            color: Theme.accent;
-                                            font-size: Theme.fs-label;
-                                            vertical-alignment: center;
-                                        }
-
-                                        Rectangle { horizontal-stretch: 1; }
-
-                                        Text {
-                                            text: (root.log-is-truncated ? "showing last " + root.log-entries.length + " of " : "") + root.log-visible-count + " / " + root.log-total-count + " rows";
-                                            color: Theme.text-muted;
-                                            font-size: Theme.fs-small;
-                                            vertical-alignment: center;
-                                        }
+                                        Rectangle { width: 18px; }
+                                        Text { text: "Time"; min-width: 88px; horizontal-stretch: 1; color: Theme.text-muted; font-size: Theme.fs-label; vertical-alignment: center; overflow: elide; }
+                                        Text { text: "Level"; width: 78px; color: Theme.text-muted; font-size: Theme.fs-label; vertical-alignment: center; }
+                                        Text { text: "Target"; min-width: 120px; horizontal-stretch: 1; color: Theme.text-muted; font-size: Theme.fs-label; vertical-alignment: center; overflow: elide; }
+                                        Text { text: "Message"; horizontal-stretch: 3; color: Theme.text-muted; font-size: Theme.fs-label; vertical-alignment: center; overflow: elide; }
                                     }
                                 }
 
-                                for row[index] in root.log-entries : VerticalLayout {
-                                    vertical-stretch: 0;
+                                if root.log-entries.length == 0 : Rectangle {
+                                    vertical-stretch: 1;
+                                    border-radius: Theme.radius-sm;
+                                    border-width: 1px;
+                                    border-color: Theme.border;
+                                    background: Theme.surface;
+
+                                    Text {
+                                        text: root.log-status;
+                                        color: Theme.text-muted;
+                                        font-size: Theme.fs-label;
+                                        width: parent.width;
+                                        height: parent.height;
+                                        horizontal-alignment: center;
+                                        vertical-alignment: center;
+                                    }
+                                }
+
+                                if root.log-entries.length > 0 : VerticalLayout {
                                     spacing: 0px;
 
                                     Rectangle {
-                                        height: 37px;
-                                        background: row-touch.has-hover ? Theme.table-row-hover : (Math.mod(index, 2) == 0 ? Theme.table-row : Theme.table-row-alt);
-
-                                        row-touch := TouchArea {
-                                            mouse-cursor: pointer;
-                                            clicked => { root.toggle-log-row(row.id); }
-                                        }
+                                        height: 32px;
+                                        background: Theme.accent-soft;
+                                        border-radius: 5px;
 
                                         HorizontalLayout {
-                                            padding-left: 10px;
-                                            padding-right: 12px;
-                                            spacing: 12px;
+                                            padding-left: 12px;
+                                            spacing: 10px;
 
                                             Rectangle {
-                                                width: 18px;
+                                                width: 14px;
                                                 height: parent.height;
+
                                                 Image {
-                                                    source: row.expanded ? Icons.chevron-down : Icons.chevron-right;
+                                                    source: Icons.live;
                                                     width: 14px;
                                                     height: 14px;
                                                     x: (parent.width - self.width) / 2;
                                                     y: (parent.height - self.height) / 2;
-                                                    colorize: Theme.text-muted;
+                                                    colorize: Theme.accent;
                                                 }
                                             }
 
                                             Text {
-                                                text: row.time;
-                                                width: 130px;
-                                                color: Theme.text-muted;
-                                                font-family: "Consolas";
-                                                font-size: Theme.fs-mono;
+                                                text: root.log-live-enabled ? (root.log-active-target != "" ? "Live Mode - " + root.log-active-target : "Live Mode") : "Paused";
+                                                color: Theme.accent;
+                                                font-size: Theme.fs-label;
                                                 vertical-alignment: center;
-                                                overflow: elide;
                                             }
 
-                                            Rectangle {
-                                                width: 78px;
-                                                height: parent.height;
-                                                LogPill {
-                                                    text: row.level;
-                                                    tone: row.level == "ERROR" ? Theme.danger : (row.level == "WARN" ? Theme.warning : (row.level == "INFO" ? Theme.success : Theme.accent));
-                                                    y: (parent.height - self.height) / 2;
-                                                }
-                                            }
+                                            Rectangle { horizontal-stretch: 1; }
 
                                             Text {
-                                                text: row.target;
-                                                width: 270px;
+                                                text: (root.log-is-truncated ? "showing last " + root.log-entries.length + " of " : "") + root.log-visible-count + " / " + root.log-total-count + " rows";
                                                 color: Theme.text-muted;
-                                                font-family: "Consolas";
-                                                font-size: Theme.fs-mono;
+                                                font-size: Theme.fs-small;
                                                 vertical-alignment: center;
-                                                overflow: elide;
-                                            }
-
-                                            Text {
-                                                text: row.message;
-                                                horizontal-stretch: 1;
-                                                color: Theme.text;
-                                                font-family: "Consolas";
-                                                font-size: Theme.fs-mono;
-                                                vertical-alignment: center;
-                                                overflow: elide;
                                             }
                                         }
                                     }
 
-                                    if row.expanded : Rectangle {
-                                        height: Math.min(row.tree-nodes.length * 24px + 8px, 320px);
-                                        background: Theme.surface;
-                                        border-width: 1px;
-                                        border-color: Theme.border;
+                                    for row[index] in root.log-entries : VerticalLayout {
+                                        vertical-stretch: 0;
+                                        spacing: 0px;
 
-                                        ScrollView {
-                                            VerticalLayout {
-                                                padding: 4px;
-                                                for node in row.tree-nodes : ObjectTreeRow {
-                                                    depth: node.depth;
-                                                    key: node.key;
-                                                    value-preview: node.value-preview;
-                                                    value-type: node.value-type;
-                                                    expandable: node.expandable;
-                                                    expanded: node.expanded;
-                                                    toggled => {
-                                                        root.toggle-tree-node(row.id, node.node-id);
+                                        Rectangle {
+                                            height: 37px;
+                                            background: row-touch.has-hover ? Theme.table-row-hover : (Math.mod(index, 2) == 0 ? Theme.table-row : Theme.table-row-alt);
+
+                                            row-touch := TouchArea {
+                                                mouse-cursor: pointer;
+                                                clicked => { root.toggle-log-row(row.id); }
+                                            }
+
+                                            HorizontalLayout {
+                                                padding-left: 10px;
+                                                padding-right: 12px;
+                                                spacing: 12px;
+
+                                                Rectangle {
+                                                    width: 18px;
+                                                    height: parent.height;
+                                                    Image {
+                                                        source: row.expanded ? Icons.chevron-down : Icons.chevron-right;
+                                                        width: 14px;
+                                                        height: 14px;
+                                                        x: (parent.width - self.width) / 2;
+                                                        y: (parent.height - self.height) / 2;
+                                                        colorize: Theme.text-muted;
+                                                    }
+                                                }
+
+                                                Text {
+                                                    text: row.time;
+                                                    min-width: 88px;
+                                                    horizontal-stretch: 1;
+                                                    color: Theme.text-muted;
+                                                    font-family: "Consolas";
+                                                    font-size: Theme.fs-mono;
+                                                    vertical-alignment: center;
+                                                    overflow: elide;
+                                                }
+
+                                                Rectangle {
+                                                    width: 78px;
+                                                    height: parent.height;
+                                                    LogPill {
+                                                        text: row.level;
+                                                        tone: row.level == "ERROR" ? Theme.danger : (row.level == "WARN" ? Theme.warning : (row.level == "INFO" ? Theme.success : Theme.accent));
+                                                        y: (parent.height - self.height) / 2;
+                                                    }
+                                                }
+
+                                                Text {
+                                                    text: row.target;
+                                                    min-width: 120px;
+                                                    horizontal-stretch: 1;
+                                                    color: Theme.text-muted;
+                                                    font-family: "Consolas";
+                                                    font-size: Theme.fs-mono;
+                                                    vertical-alignment: center;
+                                                    overflow: elide;
+                                                }
+
+                                                Text {
+                                                    text: row.message;
+                                                    horizontal-stretch: 3;
+                                                    color: Theme.text;
+                                                    font-family: "Consolas";
+                                                    font-size: Theme.fs-mono;
+                                                    vertical-alignment: center;
+                                                    overflow: elide;
+                                                }
+                                            }
+                                        }
+
+                                        if row.expanded : Rectangle {
+                                            height: Math.min(row.tree-nodes.length * 24px + 8px, 320px);
+                                            background: Theme.surface;
+                                            border-width: 1px;
+                                            border-color: Theme.border;
+
+                                            ScrollView {
+                                                VerticalLayout {
+                                                    padding: 4px;
+                                                    for node in row.tree-nodes : ObjectTreeRow {
+                                                        depth: node.depth;
+                                                        key: node.key;
+                                                        value-preview: node.value-preview;
+                                                        value-type: node.value-type;
+                                                        expandable: node.expandable;
+                                                        expanded: node.expanded;
+                                                        toggled => {
+                                                            root.toggle-tree-node(row.id, node.node-id);
+                                                        }
                                                     }
                                                 }
                                             }
