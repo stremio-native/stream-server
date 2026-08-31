@@ -849,10 +849,10 @@ export component AppWindow inherits Window {
                                         spacing: 12px;
 
                                         Rectangle { width: 18px; }
-                                        Text { text: "Time"; min-width: 88px; horizontal-stretch: 1; color: Theme.text-muted; font-size: Theme.fs-label; vertical-alignment: center; overflow: elide; }
+                                        Text { text: "Time"; width: 160px; color: Theme.text-muted; font-size: Theme.fs-label; vertical-alignment: center; }
                                         Text { text: "Level"; width: 78px; color: Theme.text-muted; font-size: Theme.fs-label; vertical-alignment: center; }
-                                        Text { text: "Target"; min-width: 120px; horizontal-stretch: 1; color: Theme.text-muted; font-size: Theme.fs-label; vertical-alignment: center; overflow: elide; }
-                                        Text { text: "Message"; horizontal-stretch: 3; color: Theme.text-muted; font-size: Theme.fs-label; vertical-alignment: center; overflow: elide; }
+                                        Text { text: "Target"; width: 270px; color: Theme.text-muted; font-size: Theme.fs-label; vertical-alignment: center; overflow: elide; }
+                                        Text { text: "Message"; horizontal-stretch: 1; color: Theme.text-muted; font-size: Theme.fs-label; vertical-alignment: center; }
                                     }
                                 }
 
@@ -951,8 +951,7 @@ export component AppWindow inherits Window {
 
                                                 Text {
                                                     text: row.time;
-                                                    min-width: 88px;
-                                                    horizontal-stretch: 1;
+                                                    width: 130px;
                                                     color: Theme.text-muted;
                                                     font-family: "Consolas";
                                                     font-size: Theme.fs-mono;
@@ -972,8 +971,7 @@ export component AppWindow inherits Window {
 
                                                 Text {
                                                     text: row.target;
-                                                    min-width: 120px;
-                                                    horizontal-stretch: 1;
+                                                    width: 270px;
                                                     color: Theme.text-muted;
                                                     font-family: "Consolas";
                                                     font-size: Theme.fs-mono;
@@ -983,7 +981,7 @@ export component AppWindow inherits Window {
 
                                                 Text {
                                                     text: row.message;
-                                                    horizontal-stretch: 3;
+                                                    horizontal-stretch: 1;
                                                     color: Theme.text;
                                                     font-family: "Consolas";
                                                     font-size: Theme.fs-mono;
