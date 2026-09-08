@@ -127,22 +127,61 @@ docker run -d --name stream-server \
 ```
 
 - The container starts headless automatically (equivalent to `stream-server --no-tray`) — no display server required.
-- Mount `/root/.config/stremio-server` (settings, HTTPS certs, logs) and `/root/.cache/stremio-server` (downloads/cache) as volumes so they survive container recreation.
+- Mount `/root/.config/stremio-server` (settings, HTTPS certs, logs) and `/root/.cache/stremio-server` (downloads/cache) as volumes so they survive container recreation. `HOME`/`XDG_CONFIG_HOME`/`XDG_CACHE_HOME`/`XDG_DATA_HOME` are also honored if you'd rather point everything at one mounted directory.
 - BitTorrent peer traffic defaults to ports `42000-42010` (TCP+UDP, `btListenInterfaces` in `/settings`). Publish that range (or run with `--network host`) for good peer connectivity.
 - `RUST_LOG` is set to `info` in the image; override with `-e RUST_LOG=debug` for more verbose logs.
+- Pass `--tui` as an extra image argument (with `docker run -it`, or `-d -it` to attach later) for the built-in terminal stats dashboard — see [Accessing & Configuring the UI](#-accessing--configuring-the-ui).
 
-This has been built and smoke-tested end-to-end (image build + container run + `/heartbeat`, `/settings`, `/stats.json`) on an x86_64 Fedora/Docker host.
+### `--network host`
+
+The default ports (`11470`/`12470`) or BitTorrent range (`42000-42010`) may already be taken by something else on the host (another stream-server instance, Stremio's own `server.js`, etc.) — this is common if you're running this alongside other services. Since `--network host` means Docker can no longer remap ports for you, the ports are overridable via environment variables:
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `STREAM_SERVER_HTTP_PORT` | `11470` | HTTP API/streaming port |
+| `STREAM_SERVER_HTTPS_PORT` | `12470` | HTTPS port (only serves if certs exist in the config dir) |
+| `STREAM_SERVER_PUBLIC_BASE_URL` | `http://127.0.0.1:<http_port>` | Base URL the server reports about itself, e.g. in `/settings` |
+
+```bash
+docker run -d -it --name stream-server \
+  --network host \
+  --restart unless-stopped \
+  -v stream-server-data:/data \
+  -e HOME=/data -e XDG_CONFIG_HOME=/data/config -e XDG_CACHE_HOME=/data/cache -e XDG_DATA_HOME=/data/share \
+  -e STREAM_SERVER_HTTP_PORT=11472 -e STREAM_SERVER_HTTPS_PORT=12472 \
+  -e STREAM_SERVER_PUBLIC_BASE_URL=http://192.168.1.5:11472 \
+  --device /dev/dri:/dev/dri \
+  stream-server:libtorrent --tui
+```
+
+`--device /dev/dri:/dev/dri` passes through the host GPU for hardware-accelerated FFmpeg transcoding, if available. `-it` (kept even when running detached with `-d`) allocates a pty so `docker attach` can show the `--tui` dashboard later without disrupting the running server (see below).
+
+This exact configuration has been built and deployed end-to-end (image build, container run, `/heartbeat`, `/settings` tuning, and TUI attach all verified) on an x86_64 Fedora/Docker host running alongside other, unrelated streaming services.
 
 ## 🖥️ Accessing & Configuring the UI
 
-Stream Server has **no bundled web UI of its own** — it's a drop-in backend that a Stremio client (web, desktop, or mobile app) talks to, the same way it talks to Stremio's official `server.js`. To use it:
+Stream Server has **no bundled web UI** — it's a drop-in backend that a Stremio client (web, desktop, or mobile app) talks to, the same way it talks to Stremio's official `server.js`. To use it:
 
 1. Open the [Stremio web app](https://web.stremio.com) or a desktop/mobile Stremio client.
 2. Go to **Settings → Streaming Server**.
-3. Set **Server URL** to where this container/binary is reachable, e.g. `http://192.168.1.5:11470/` (swap in your host's IP or hostname).
+3. Set **Server URL** to where this container/binary is reachable, e.g. `http://192.168.1.5:11470/` (swap in your host's IP/port).
 4. Stremio should report the server as connected; playing a torrent stream will now route through this server instead of Stremio's built-in one.
 
-Useful endpoints for checking the server directly (from any machine that can reach it):
+It does have a **built-in terminal (TUI) stats dashboard** — a live view of active engines/torrents and files, built with `ratatui`. Start the binary/container with `--tui` (alongside `--no-tray` for headless/Docker use) to enable it:
+
+```bash
+# Native
+stream-server --no-tray --tui
+
+# Docker: run with -it (even when backgrounded with -d) so a pty exists to attach to
+docker run -d -it --name stream-server ... stream-server:libtorrent --tui
+docker attach stream-server        # view the live dashboard
+# detach without stopping the container: Ctrl+P, Ctrl+Q
+```
+
+The TUI needs a real terminal (it's a no-op, non-fatal, if none is attached), so it doesn't fit a plain `docker run -d` without `-it`.
+
+For remote/scripted access instead, use the JSON endpoints directly:
 
 ```bash
 curl http://192.168.1.5:11470/heartbeat     # health check
@@ -154,7 +193,7 @@ If desktop-app config is what you want instead, `settings-gui` (built alongside 
 
 ## ⚙️ Configuring libtorrent
 
-BitTorrent/libtorrent behavior is configured at runtime via the same `/settings` API used by the UI above, and persisted to `settings.json` in the config directory (`~/.config/stremio-server/settings.json` on Linux, or the `stream-server-config` volume in Docker) — no rebuild needed. Full option reference: [docs/bittorrent-settings.md](docs/bittorrent-settings.md).
+BitTorrent/libtorrent behavior is configured at runtime via the same `/settings` API used above, and persisted to `settings.json` in the config directory (`~/.config/stremio-server/settings.json` on Linux, or wherever your config volume/`XDG_CONFIG_HOME` points in Docker) — no rebuild needed. Full option reference: [docs/bittorrent-settings.md](docs/bittorrent-settings.md).
 
 ```bash
 # View current settings
@@ -167,6 +206,32 @@ curl -X POST http://192.168.1.5:11470/settings \
 ```
 
 Key options: `btEnableDht`, `btEnablePex`, `btEnableLsd` (peer discovery), `btEncryptionMode` (`allow`/`require`/`disable`), `btAnonymousMode`, `btAllowMultipleConnectionsPerIp`, `btValidateHttpsTrackers`, `btSsrfMitigation`.
+
+### Tuning for playback speed
+
+The defaults are already reasonable, but for a dedicated streaming box these knobs matter most:
+
+```bash
+curl -X POST http://192.168.1.5:11470/settings \
+  -H "Content-Type: application/json" \
+  -d '{
+    "btMaxConnections": 1200,
+    "btMinPeersForStable": 3,
+    "btAllowMultipleConnectionsPerIp": true,
+    "btEncryptionMode": "allow",
+    "btDownloadSpeedSoftLimit": 0,
+    "btDownloadSpeedHardLimit": 0,
+    "seedingEnabled": true
+  }'
+```
+
+- `btMaxConnections` (up to `MAX_EFFECTIVE_BT_CONNECTIONS` = 1200, see `enginefs::backend::mod`): more simultaneous peer slots to source pieces from.
+- `btMinPeersForStable`: lower means the engine reports "stable" (and playback can start) with fewer peers connected — trades a little early-playback smoothness for a faster start.
+- `btEncryptionMode: "allow"` (not `"require"`/`"disable"`): accepts both encrypted and plaintext peers, maximizing the usable peer pool. Only `"require"` if your ISP throttles unencrypted BitTorrent traffic.
+- `btDownloadSpeedSoftLimit`/`btDownloadSpeedHardLimit: 0`: unlimited.
+- `seedingEnabled: true`: keeps seeding after download completes, which improves download speed too via tit-for-tat reciprocity with peers.
+- Beyond `/settings`, run with `--network host` and publish/forward the `btListenInterfaces` port range — libtorrent's UPnP/NAT-PMP (always on) can then successfully port-map with your router for real incoming connections, which matters more for peer availability than any single setting above.
+- Don't set `btSsrfMitigation`/`btValidateHttpsTrackers` to `false` to chase speed — they don't meaningfully affect throughput, only safety.
 
 ---
 
