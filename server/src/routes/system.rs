@@ -366,6 +366,46 @@ fn update_string_setting(
     }
 }
 
+/// Reads `key` from the environment; falls back to `default` if unset or unparseable.
+fn env_bool(key: &str, default: bool) -> bool {
+    match std::env::var(key) {
+        Ok(v) => match v.trim().to_ascii_lowercase().as_str() {
+            "1" | "true" | "yes" | "on" => true,
+            "0" | "false" | "no" | "off" => false,
+            _ => default,
+        },
+        Err(_) => default,
+    }
+}
+
+fn env_parsed<T: std::str::FromStr>(key: &str, default: T) -> T {
+    std::env::var(key)
+        .ok()
+        .and_then(|v| v.trim().parse().ok())
+        .unwrap_or(default)
+}
+
+fn env_string(key: &str, default: String) -> String {
+    std::env::var(key)
+        .ok()
+        .filter(|v| !v.is_empty())
+        .unwrap_or(default)
+}
+
+fn env_encryption_mode(key: &str, default: TorrentEncryptionMode) -> TorrentEncryptionMode {
+    std::env::var(key)
+        .ok()
+        .and_then(|v| parse_torrent_encryption_mode(&Value::String(v)))
+        .unwrap_or(default)
+}
+
+fn env_proxy_type(key: &str, default: TorrentProxyType) -> TorrentProxyType {
+    std::env::var(key)
+        .ok()
+        .and_then(|v| parse_torrent_proxy_type(&Value::String(v)))
+        .unwrap_or(default)
+}
+
 impl Default for ServerSettings {
     fn default() -> Self {
         let cache_root = std::env::var("STREMIO_CACHE_ROOT")
@@ -377,41 +417,95 @@ impl Default for ServerSettings {
                     .to_string()
             });
 
+        // Every field below is overridable via a STREAM_SERVER_* env var, read
+        // once here at first startup (before any settings.json exists). Once
+        // settings.json exists, it takes over and the /settings API is the
+        // way to change things -- these env vars only shape the *initial*
+        // defaults for a fresh deployment. Baseline values below are tuned
+        // for a single-stream home connection in the ~100Mbps class:
+        // bt_max_connections=800 already saturates the per-torrent cap
+        // (see enginefs::backend::TorrentSpeedProfile::effective_connection_limits,
+        // which clamps per-torrent connections to 200 once the global max
+        // reaches 800), so raising it further only helps if you're running
+        // several torrents at once -- it doesn't speed up a single stream.
+        // bt_download_speed_hard_limit defaults to ~90% of a 100Mbps line
+        // (11.25 MB/s) to leave headroom against bufferbloat/self-induced
+        // congestion, which otherwise costs more effective throughput (and
+        // playback smoothness) than it gains; set it to 0 to go unlimited.
         Self {
             app_path: std::env::current_exe()
                 .map(|p| p.to_string_lossy().to_string())
                 .unwrap_or_else(|_| "/usr/bin/stremio-server".to_string()),
             server_version: env!("CARGO_PKG_VERSION").to_string(),
             cache_root,
-            cache_size: 10.0 * 1024.0 * 1024.0 * 1024.0, // 10GB
-            proxy_streams_enabled: false,
-            bt_max_connections: enginefs::backend::DEFAULT_BT_MAX_CONNECTIONS,
-            bt_handshake_timeout: 20000,
-            bt_request_timeout: 10000,
-            bt_download_speed_soft_limit: 0.0,
-            bt_download_speed_hard_limit: 0.0,
-            bt_min_peers_for_stable: 5,
-            bt_enable_dht: default_bt_enable_dht(),
-            bt_enable_pex: default_bt_enable_pex(),
-            bt_enable_lsd: default_bt_enable_lsd(),
-            bt_encryption_mode: TorrentEncryptionMode::default(),
-            bt_anonymous_mode: default_bt_anonymous_mode(),
-            bt_allow_multiple_connections_per_ip: default_bt_allow_multiple_connections_per_ip(),
-            bt_listen_interfaces: default_bt_listen_interfaces(),
-            bt_outgoing_interfaces: String::new(),
-            bt_outgoing_port: 0,
-            bt_num_outgoing_ports: 0,
-            bt_proxy_type: TorrentProxyType::default(),
-            bt_proxy_host: String::new(),
-            bt_proxy_port: 0,
-            bt_proxy_username: String::new(),
-            bt_proxy_password: String::new(),
-            bt_proxy_hostnames: default_bt_proxy_hostnames(),
-            bt_proxy_peer_connections: default_bt_proxy_peer_connections(),
-            bt_proxy_tracker_connections: default_bt_proxy_tracker_connections(),
-            bt_proxy_send_host_in_connect: default_bt_proxy_send_host_in_connect(),
-            bt_validate_https_trackers: default_bt_validate_https_trackers(),
-            bt_ssrf_mitigation: default_bt_ssrf_mitigation(),
+            cache_size: env_parsed("STREAM_SERVER_CACHE_SIZE_BYTES", 10.0 * 1024.0 * 1024.0 * 1024.0), // 10GB
+            proxy_streams_enabled: env_bool("STREAM_SERVER_PROXY_STREAMS_ENABLED", false),
+            bt_max_connections: env_parsed(
+                "STREAM_SERVER_BT_MAX_CONNECTIONS",
+                enginefs::backend::DEFAULT_BT_MAX_CONNECTIONS,
+            ),
+            bt_handshake_timeout: env_parsed("STREAM_SERVER_BT_HANDSHAKE_TIMEOUT_MS", 20000),
+            bt_request_timeout: env_parsed("STREAM_SERVER_BT_REQUEST_TIMEOUT_MS", 10000),
+            bt_download_speed_soft_limit: env_parsed(
+                "STREAM_SERVER_BT_DOWNLOAD_SPEED_SOFT_LIMIT",
+                0.0,
+            ),
+            bt_download_speed_hard_limit: env_parsed(
+                "STREAM_SERVER_BT_DOWNLOAD_SPEED_HARD_LIMIT",
+                11.25 * 1024.0 * 1024.0, // ~90Mbps of a 100Mbps line, in bytes/sec
+            ),
+            bt_min_peers_for_stable: env_parsed("STREAM_SERVER_BT_MIN_PEERS_FOR_STABLE", 3),
+            bt_enable_dht: env_bool("STREAM_SERVER_BT_ENABLE_DHT", default_bt_enable_dht()),
+            bt_enable_pex: env_bool("STREAM_SERVER_BT_ENABLE_PEX", default_bt_enable_pex()),
+            bt_enable_lsd: env_bool("STREAM_SERVER_BT_ENABLE_LSD", default_bt_enable_lsd()),
+            bt_encryption_mode: env_encryption_mode(
+                "STREAM_SERVER_BT_ENCRYPTION_MODE",
+                TorrentEncryptionMode::default(),
+            ),
+            bt_anonymous_mode: env_bool(
+                "STREAM_SERVER_BT_ANONYMOUS_MODE",
+                default_bt_anonymous_mode(),
+            ),
+            bt_allow_multiple_connections_per_ip: env_bool(
+                "STREAM_SERVER_BT_ALLOW_MULTIPLE_CONNECTIONS_PER_IP",
+                true,
+            ),
+            bt_listen_interfaces: env_string(
+                "STREAM_SERVER_BT_LISTEN_INTERFACES",
+                default_bt_listen_interfaces(),
+            ),
+            bt_outgoing_interfaces: env_string("STREAM_SERVER_BT_OUTGOING_INTERFACES", String::new()),
+            bt_outgoing_port: env_parsed("STREAM_SERVER_BT_OUTGOING_PORT", 0),
+            bt_num_outgoing_ports: env_parsed("STREAM_SERVER_BT_NUM_OUTGOING_PORTS", 0),
+            bt_proxy_type: env_proxy_type("STREAM_SERVER_BT_PROXY_TYPE", TorrentProxyType::default()),
+            bt_proxy_host: env_string("STREAM_SERVER_BT_PROXY_HOST", String::new()),
+            bt_proxy_port: env_parsed("STREAM_SERVER_BT_PROXY_PORT", 0),
+            bt_proxy_username: env_string("STREAM_SERVER_BT_PROXY_USERNAME", String::new()),
+            bt_proxy_password: env_string("STREAM_SERVER_BT_PROXY_PASSWORD", String::new()),
+            bt_proxy_hostnames: env_bool(
+                "STREAM_SERVER_BT_PROXY_HOSTNAMES",
+                default_bt_proxy_hostnames(),
+            ),
+            bt_proxy_peer_connections: env_bool(
+                "STREAM_SERVER_BT_PROXY_PEER_CONNECTIONS",
+                default_bt_proxy_peer_connections(),
+            ),
+            bt_proxy_tracker_connections: env_bool(
+                "STREAM_SERVER_BT_PROXY_TRACKER_CONNECTIONS",
+                default_bt_proxy_tracker_connections(),
+            ),
+            bt_proxy_send_host_in_connect: env_bool(
+                "STREAM_SERVER_BT_PROXY_SEND_HOST_IN_CONNECT",
+                default_bt_proxy_send_host_in_connect(),
+            ),
+            bt_validate_https_trackers: env_bool(
+                "STREAM_SERVER_BT_VALIDATE_HTTPS_TRACKERS",
+                default_bt_validate_https_trackers(),
+            ),
+            bt_ssrf_mitigation: env_bool(
+                "STREAM_SERVER_BT_SSRF_MITIGATION",
+                default_bt_ssrf_mitigation(),
+            ),
             remote_https: None,
             transcode_profile: None,
             auto_update_enabled: default_auto_update_enabled(),
@@ -420,7 +514,7 @@ impl Default for ServerSettings {
             cached_trackers: Vec::new(),
             trackers_last_updated: 0,
             trackers_source_url: default_trackers_url(),
-            seeding_enabled: default_seeding_enabled(),
+            seeding_enabled: env_bool("STREAM_SERVER_SEEDING_ENABLED", default_seeding_enabled()),
         }
     }
 }
