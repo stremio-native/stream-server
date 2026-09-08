@@ -67,10 +67,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 COPY --from=builder /app/target/release/server /usr/local/bin/stream-server
 
-# HTTP API / streaming, HTTPS. BitTorrent peer traffic uses an
-# ephemeral/DHT-negotiated port by default -- run with --network=host or
-# publish additional ports if you pin one via the /settings API.
-EXPOSE 11470/tcp 12470/tcp
+# HTTP API / streaming, HTTPS, and the default BitTorrent listen range
+# (btListenInterfaces, configurable via /settings).
+EXPOSE 11470/tcp 12470/tcp 42000-42010/tcp 42000-42010/udp
 
 VOLUME ["/root/.config/stremio-server", "/root/.cache/stremio-server"]
 

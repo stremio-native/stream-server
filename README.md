@@ -110,6 +110,66 @@ The server starts on `http://localhost:11470` by default (compatible with standa
 
 ---
 
+## 🐳 Docker
+
+A multi-stage `Dockerfile` builds the `libtorrent` backend the same way CI does (libtorrent 2.1.1 from source, `--features libtorrent --no-default-features`):
+
+```bash
+docker build -t stream-server:libtorrent .
+
+docker run -d --name stream-server \
+  -p 11470:11470 \
+  -p 42000-42010:42000-42010/tcp \
+  -p 42000-42010:42000-42010/udp \
+  -v stream-server-config:/root/.config/stremio-server \
+  -v stream-server-cache:/root/.cache/stremio-server \
+  stream-server:libtorrent
+```
+
+- The container starts headless automatically (equivalent to `stream-server --no-tray`) — no display server required.
+- Mount `/root/.config/stremio-server` (settings, HTTPS certs, logs) and `/root/.cache/stremio-server` (downloads/cache) as volumes so they survive container recreation.
+- BitTorrent peer traffic defaults to ports `42000-42010` (TCP+UDP, `btListenInterfaces` in `/settings`). Publish that range (or run with `--network host`) for good peer connectivity.
+- `RUST_LOG` is set to `info` in the image; override with `-e RUST_LOG=debug` for more verbose logs.
+
+This has been built and smoke-tested end-to-end (image build + container run + `/heartbeat`, `/settings`, `/stats.json`) on an x86_64 Fedora/Docker host.
+
+## 🖥️ Accessing & Configuring the UI
+
+Stream Server has **no bundled web UI of its own** — it's a drop-in backend that a Stremio client (web, desktop, or mobile app) talks to, the same way it talks to Stremio's official `server.js`. To use it:
+
+1. Open the [Stremio web app](https://web.stremio.com) or a desktop/mobile Stremio client.
+2. Go to **Settings → Streaming Server**.
+3. Set **Server URL** to where this container/binary is reachable, e.g. `http://192.168.1.5:11470/` (swap in your host's IP or hostname).
+4. Stremio should report the server as connected; playing a torrent stream will now route through this server instead of Stremio's built-in one.
+
+Useful endpoints for checking the server directly (from any machine that can reach it):
+
+```bash
+curl http://192.168.1.5:11470/heartbeat     # health check
+curl http://192.168.1.5:11470/stats.json    # server + torrent stats
+curl http://192.168.1.5:11470/settings      # current settings, including BitTorrent options
+```
+
+If desktop-app config is what you want instead, `settings-gui` (built alongside `server` on Windows/macOS/Linux desktop builds) provides a native settings window — not applicable to the headless Docker image above.
+
+## ⚙️ Configuring libtorrent
+
+BitTorrent/libtorrent behavior is configured at runtime via the same `/settings` API used by the UI above, and persisted to `settings.json` in the config directory (`~/.config/stremio-server/settings.json` on Linux, or the `stream-server-config` volume in Docker) — no rebuild needed. Full option reference: [docs/bittorrent-settings.md](docs/bittorrent-settings.md).
+
+```bash
+# View current settings
+curl http://192.168.1.5:11470/settings
+
+# Update just the keys you want to change
+curl -X POST http://192.168.1.5:11470/settings \
+  -H "Content-Type: application/json" \
+  -d '{"btEnableDht": false, "btEncryptionMode": "require"}'
+```
+
+Key options: `btEnableDht`, `btEnablePex`, `btEnableLsd` (peer discovery), `btEncryptionMode` (`allow`/`require`/`disable`), `btAnonymousMode`, `btAllowMultipleConnectionsPerIp`, `btValidateHttpsTrackers`, `btSsrfMitigation`.
+
+---
+
 ## 🔧 Build Instructions
 
 <details>
