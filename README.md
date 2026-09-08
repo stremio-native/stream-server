@@ -156,7 +156,7 @@ docker run -d -it --name stream-server \
 
 `--device /dev/dri:/dev/dri` passes through the host GPU for hardware-accelerated FFmpeg transcoding, if available. `-it` (kept even when running detached with `-d`) allocates a pty so `docker attach` can show the `--tui` dashboard later without disrupting the running server (see below).
 
-This exact configuration has been built and deployed end-to-end (image build, container run, `/heartbeat`, `/settings` tuning, and TUI attach all verified) on an x86_64 Fedora/Docker host running alongside other, unrelated streaming services.
+This exact configuration has been built and deployed end-to-end (image build, container run, `/heartbeat`, `/settings` tuning, and TUI attach all verified) on an x86_64 Fedora/Docker host running alongside other, unrelated streaming services. Add `STREAM_SERVER_BT_*` env vars from [Tuning for playback speed](#tuning-for-playback-speed) here too if you want them baked into the deployment — note that they only take effect on a *fresh* volume/config dir; `stream-server-data` above is reused on purpose to carry over an existing deployment's cache and settings, so its already-persisted `settings.json` takes precedence regardless of env vars.
 
 ## 🖥️ Accessing & Configuring the UI
 
@@ -209,29 +209,31 @@ Key options: `btEnableDht`, `btEnablePex`, `btEnableLsd` (peer discovery), `btEn
 
 ### Tuning for playback speed
 
-The defaults are already reasonable, but for a dedicated streaming box these knobs matter most:
+Every field in `/settings` can also be set as a `STREAM_SERVER_*` environment variable (e.g. `btMaxConnections` → `STREAM_SERVER_BT_MAX_CONNECTIONS`, camelCase → SCREAMING_SNAKE_CASE), which is read once when the server constructs its **default** settings on first startup. This only shapes the *initial* config for a fresh deployment (no `settings.json` yet in the config dir) — once `settings.json` exists, it's the source of truth and `/settings` (below) is how you change things from then on.
+
+The shipped defaults are already tuned for a single-stream home connection in the ~100Mbps class:
+
+| Env var | Default | Why |
+| --- | --- | --- |
+| `STREAM_SERVER_BT_MAX_CONNECTIONS` | `800` | Per-torrent connections are separately clamped to 200 once the global max reaches 800 (`TorrentSpeedProfile::effective_connection_limits`), so raising this further doesn't speed up a single stream — it only helps if you're running several torrents at once. |
+| `STREAM_SERVER_BT_MIN_PEERS_FOR_STABLE` | `3` (was `5`) | The engine reports "stable" (and playback can start) with fewer peers connected — a little less early-playback smoothness for a faster start. |
+| `STREAM_SERVER_BT_ALLOW_MULTIPLE_CONNECTIONS_PER_IP` | `true` (was `false`) | More usable connections when many peers sit behind the same IP (CGNAT, seedboxes). |
+| `STREAM_SERVER_BT_ENCRYPTION_MODE` | `allow` | Accepts both encrypted and plaintext peers, maximizing the usable peer pool. Only use `require` if your ISP throttles unencrypted BitTorrent traffic. |
+| `STREAM_SERVER_BT_DOWNLOAD_SPEED_HARD_LIMIT` | `11796480` (~11.25MB/s, bytes/sec) | ~90% of a 100Mbps line. This is the one speed-limit field actually wired to libtorrent (`download_rate_limit`); leaving headroom below your real line rate avoids bufferbloat, which costs more effective throughput — and playback smoothness — than it gains. **Adjust this for your own link speed**: roughly `(Mbps × 1_000_000 / 8) × 0.9`. Set to `0` for unlimited. |
+| `STREAM_SERVER_BT_DOWNLOAD_SPEED_SOFT_LIMIT` | `0` | Present in the API for parity, but not currently wired to anything in the libtorrent backend — changing it has no effect yet. |
+| `STREAM_SERVER_SEEDING_ENABLED` | `true` | Keeps seeding after download completes, which improves download speed too via tit-for-tat reciprocity with peers. |
+
+All other `ServerSettings` fields (`btEnableDht`/`Pex`/`Lsd`, `btAnonymousMode`, `btListenInterfaces`, `btOutgoing*`, the `btProxy*` group, `btValidateHttpsTrackers`, `btSsrfMitigation`, `cacheSize`, `proxyStreamsEnabled`) follow the same `STREAM_SERVER_<FIELD_IN_SCREAMING_SNAKE_CASE>` pattern — see `server/src/routes/system.rs`'s `Default for ServerSettings` for the exact list. Don't set `btSsrfMitigation`/`btValidateHttpsTrackers` to `false` chasing speed — they don't meaningfully affect throughput, only safety.
+
+Equivalent one-off tuning via the running API instead of env vars (useful for a change you don't want to bake into the deployment):
 
 ```bash
 curl -X POST http://192.168.1.5:11470/settings \
   -H "Content-Type: application/json" \
-  -d '{
-    "btMaxConnections": 1200,
-    "btMinPeersForStable": 3,
-    "btAllowMultipleConnectionsPerIp": true,
-    "btEncryptionMode": "allow",
-    "btDownloadSpeedSoftLimit": 0,
-    "btDownloadSpeedHardLimit": 0,
-    "seedingEnabled": true
-  }'
+  -d '{"btMaxConnections": 800, "btDownloadSpeedHardLimit": 11796480}'
 ```
 
-- `btMaxConnections` (up to `MAX_EFFECTIVE_BT_CONNECTIONS` = 1200, see `enginefs::backend::mod`): more simultaneous peer slots to source pieces from.
-- `btMinPeersForStable`: lower means the engine reports "stable" (and playback can start) with fewer peers connected — trades a little early-playback smoothness for a faster start.
-- `btEncryptionMode: "allow"` (not `"require"`/`"disable"`): accepts both encrypted and plaintext peers, maximizing the usable peer pool. Only `"require"` if your ISP throttles unencrypted BitTorrent traffic.
-- `btDownloadSpeedSoftLimit`/`btDownloadSpeedHardLimit: 0`: unlimited.
-- `seedingEnabled: true`: keeps seeding after download completes, which improves download speed too via tit-for-tat reciprocity with peers.
-- Beyond `/settings`, run with `--network host` and publish/forward the `btListenInterfaces` port range — libtorrent's UPnP/NAT-PMP (always on) can then successfully port-map with your router for real incoming connections, which matters more for peer availability than any single setting above.
-- Don't set `btSsrfMitigation`/`btValidateHttpsTrackers` to `false` to chase speed — they don't meaningfully affect throughput, only safety.
+Beyond `/settings`, run with `--network host` and publish/forward the `btListenInterfaces` port range — libtorrent's UPnP/NAT-PMP (always on) can then successfully port-map with your router for real incoming connections, which matters more for peer availability than any single setting above.
 
 ---
 
