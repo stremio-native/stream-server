@@ -1,0 +1,13 @@
+/target
+/target-patched
+/libtorrent-downloads
+/rqbit-downloads
+/vcpkg
+/vcpkg_installed
+err.txt
+/System.Collections.Hashtable.Root/
+.git
+docs
+icons
+scripts/tests
+*.md
