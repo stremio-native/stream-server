@@ -112,10 +112,26 @@ impl ServerConfig {
     }
 
     pub fn binary_default() -> Self {
+        // Overridable so multiple instances (or instances sharing a host with
+        // other services on the default ports) can run with --network host,
+        // where Docker can no longer remap ports for us.
+        let http_port = std::env::var("STREAM_SERVER_HTTP_PORT")
+            .ok()
+            .and_then(|v| v.parse::<u16>().ok())
+            .unwrap_or(DEFAULT_HTTP_PORT);
+        let https_port = std::env::var("STREAM_SERVER_HTTPS_PORT")
+            .ok()
+            .and_then(|v| v.parse::<u16>().ok())
+            .unwrap_or(DEFAULT_HTTPS_PORT);
+        let public_base_url = std::env::var("STREAM_SERVER_PUBLIC_BASE_URL")
+            .ok()
+            .filter(|v| !v.is_empty())
+            .unwrap_or_else(|| format!("http://127.0.0.1:{http_port}"));
+
         Self {
-            http_addr: SocketAddr::from(([0, 0, 0, 0], DEFAULT_HTTP_PORT)),
-            https_addr: Some(SocketAddr::from(([0, 0, 0, 0], DEFAULT_HTTPS_PORT))),
-            public_base_url: Some(format!("http://127.0.0.1:{DEFAULT_HTTP_PORT}")),
+            http_addr: SocketAddr::from(([0, 0, 0, 0], http_port)),
+            https_addr: Some(SocketAddr::from(([0, 0, 0, 0], https_port))),
+            public_base_url: Some(public_base_url),
             config_dir: None,
             cache_dir: None,
             use_tui: false,
