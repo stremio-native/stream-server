@@ -666,7 +666,7 @@ rust::Vec<AlertInfo> session_pop_alerts(Session &session) {
     info.alert_type = a->type();
     info.category = static_cast<int32_t>(static_cast<uint32_t>(a->category()));
     info.what = rust::String(a->what());
-    info.message = rust::String(a->message());
+    info.message = rust::String::lossy(a->message());
     info.timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
                          a->timestamp().time_since_epoch())
                          .count();
