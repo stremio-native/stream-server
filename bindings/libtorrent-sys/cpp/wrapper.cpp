@@ -13,7 +13,6 @@
 #include <libtorrent/extensions/smart_ban.hpp>
 #include <libtorrent/extensions/ut_metadata.hpp>
 #include <libtorrent/extensions/ut_pex.hpp>
-#include <libtorrent/hex.hpp>
 #include <libtorrent/load_torrent.hpp>
 #include <libtorrent/magnet_uri.hpp>
 #include <libtorrent/peer_info.hpp>
@@ -25,9 +24,11 @@
 #include <libtorrent/write_resume_data.hpp>
 
 #include <algorithm>
+#include <charconv>
 #include <chrono>
 #include <cstddef>
 #include <iterator>
+#include <optional>
 #include <sstream>
 #include <utility>
 
@@ -49,10 +50,20 @@ static rust::String sha256_to_hex(const lt::sha256_hash &hash) {
   return rust::String(ss.str());
 }
 
-static lt::sha1_hash hex_to_sha1(rust::Str hex) {
-  std::string hex_str(hex.data(), hex.size());
+static std::optional<lt::sha1_hash> hex_to_sha1(rust::Str hex) {
   lt::sha1_hash hash;
-  lt::aux::from_hex(hex_str, hash.data());
+  if (hex.size() != static_cast<std::size_t>(2 * hash.size())) {
+    return std::nullopt;
+  }
+  const char *input = hex.data();
+  for (auto &byte : hash) {
+    const char *end = input + 2;
+    const auto result = std::from_chars(input, end, byte, 16);
+    if (result.ec != std::errc{} || result.ptr != end) {
+      return std::nullopt;
+    }
+    input = end;
+  }
   return hash;
 }
 
@@ -577,8 +588,10 @@ rust::Vec<TorrentStatus> session_get_torrents(Session const &session) {
 
 std::unique_ptr<TorrentHandle> session_find_torrent(Session const &session,
                                                     rust::Str info_hash) {
-  lt::sha1_hash hash = hex_to_sha1(info_hash);
-  lt::torrent_handle h = session.session.find_torrent(hash);
+  const auto hash = hex_to_sha1(info_hash);
+  if (!hash)
+    throw std::runtime_error("Invalid torrent info hash");
+  lt::torrent_handle h = session.session.find_torrent(*hash);
   if (!h.is_valid())
     throw std::runtime_error("Torrent not found");
   return std::make_unique<TorrentHandle>(std::move(h));
@@ -586,8 +599,10 @@ std::unique_ptr<TorrentHandle> session_find_torrent(Session const &session,
 
 TorrentStatus session_get_torrent_status(Session const &session,
                                          rust::Str info_hash) {
-  lt::sha1_hash hash = hex_to_sha1(info_hash);
-  lt::torrent_handle h = session.session.find_torrent(hash);
+  const auto hash = hex_to_sha1(info_hash);
+  if (!hash)
+    throw std::runtime_error("Invalid torrent info hash");
+  lt::torrent_handle h = session.session.find_torrent(*hash);
   if (!h.is_valid())
     throw std::runtime_error("Torrent not found");
   return make_torrent_status(h.status(playback_status_flags()));
@@ -648,8 +663,8 @@ void session_add_dht_node(Session &session, rust::Str host, int32_t port) {
 }
 
 void session_dht_get_peers(Session &session, rust::Str info_hash) {
-  lt::sha1_hash hash = hex_to_sha1(info_hash);
-  session.session.dht_get_peers(hash);
+  if (const auto hash = hex_to_sha1(info_hash))
+    session.session.dht_get_peers(*hash);
 }
 
 // ============================================================================
